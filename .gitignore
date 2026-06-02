@@ -1,7 +1,30 @@
-node_modules
-dist
-dist-ssr
-*.local
+# MCP 설정
+.mcp.json
+
+# Claude 로컬 설정
+.claude/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# 캐시 및 빌드
+.cache/
+.vite/
+dist/
+dist-ssr/
+
+# 환경 변수
+.env
+.env.local
+.env.*.local
+
+# OS / IDE
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 로그
 *.log
-.claude/settings.local.json
+npm-debug.log*
