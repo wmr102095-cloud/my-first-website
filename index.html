@@ -3,29 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>나의 첫 번째 웹사이트</title>
+  <title>현재 날씨</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .card { text-align: center; padding: 3rem 2rem; max-width: 520px; width: 90%; background: #1e293b; border-radius: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-    .avatar { font-size: 4rem; margin-bottom: 1rem; }
-    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p { color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; font-size: 1rem; }
-    .badge { display: inline-block; background: #334155; color: #7dd3fc; padding: 0.3rem 0.9rem; border-radius: 999px; font-size: 0.85rem; margin: 0.25rem; }
-    .footer { margin-top: 2rem; font-size: 0.8rem; color: #475569; }
+    body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1e3a5f, #2d6a9f); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card { text-align: center; padding: 2.5rem 2rem; max-width: 400px; width: 90%; background: rgba(255,255,255,0.12); backdrop-filter: blur(12px); border-radius: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3); color: #fff; }
+    .icon { font-size: 5rem; margin-bottom: 0.5rem; }
+    .city { font-size: 1.2rem; color: #cce4ff; margin-bottom: 0.3rem; }
+    .temp { font-size: 4rem; font-weight: 700; margin: 0.3rem 0; }
+    .desc { font-size: 1.1rem; color: #b8d9ff; margin-bottom: 1.5rem; }
+    .info { display: flex; justify-content: center; gap: 2rem; background: rgba(255,255,255,0.1); border-radius: 1rem; padding: 1rem; }
+    .info div { font-size: 0.9rem; color: #cce4ff; }
+    .info span { display: block; font-size: 1.2rem; font-weight: 600; color: #fff; }
+    .footer { margin-top: 1.5rem; font-size: 0.75rem; color: #7fb3d3; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="avatar">👋</div>
-    <h1>안녕하세요!</h1>
-    <p>저는 웹 개발을 배우고 있는 개발자입니다.<br>이 페이지는 나의 첫 번째 GitHub Pages 배포입니다.</p>
-    <div>
-      <span class="badge">HTML</span>
-      <span class="badge">CSS</span>
-      <span class="badge">GitHub Pages</span>
+    <div class="icon">⛅</div>
+    <div class="city">📍 서울, 대한민국</div>
+    <div class="temp">23°C</div>
+    <div class="desc">부분적으로 흐림</div>
+    <div class="info">
+      <div><span>62%</span>습도</div>
+      <div><span>12 km/h</span>바람</div>
+      <div><span>1013 hPa</span>기압</div>
     </div>
-    <div class="footer">🚀 Deployed with GitHub Actions</div>
+    <div class="footer">마지막 업데이트: 2026-06-04 · GitHub Pages</div>
   </div>
 </body>
 </html>
