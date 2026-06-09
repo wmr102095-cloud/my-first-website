@@ -12,9 +12,9 @@ import LoginIcon from '@mui/icons-material/Login'
 import { supabase } from '../supabaseClient'
 
 const BRANDS = [
-  { key: 'benz', logo: '/logos/mercedes.webp' },
-  { key: 'audi', logo: '/logos/audi.svg' },
-  { key: 'bmw',  logo: '/logos/bmw.svg' },
+  { key: 'benz', logo: `${import.meta.env.BASE_URL}logos/mercedes.webp` },
+  { key: 'audi', logo: `${import.meta.env.BASE_URL}logos/audi.svg` },
+  { key: 'bmw',  logo: `${import.meta.env.BASE_URL}logos/bmw.svg` },
 ]
 
 const toFakeEmail = (username) => `${username.trim().toLowerCase()}@benzcomm.com`

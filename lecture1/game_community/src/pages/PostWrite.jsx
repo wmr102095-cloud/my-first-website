@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box, Container, Typography, Paper, TextField,
@@ -9,9 +9,9 @@ import SendIcon from '@mui/icons-material/Send'
 import { supabase } from '../supabaseClient'
 
 const BRANDS = [
-  { key: 'benz', label: 'BENZ', logo: '/logos/mercedes.webp', color: '#e8e8e8' },
-  { key: 'audi', label: 'AUDI', logo: '/logos/audi.svg',      color: '#e30613' },
-  { key: 'bmw',  label: 'BMW',  logo: '/logos/bmw.svg',       color: '#1c69d4' },
+  { key: 'benz', label: 'BENZ', logo: `${import.meta.env.BASE_URL}logos/mercedes.webp`, color: '#e8e8e8' },
+  { key: 'audi', label: 'AUDI', logo: `${import.meta.env.BASE_URL}logos/audi.svg`,      color: '#e30613' },
+  { key: 'bmw',  label: 'BMW',  logo: `${import.meta.env.BASE_URL}logos/bmw.svg`,       color: '#1c69d4' },
 ]
 
 export default function PostWrite({ profile }) {

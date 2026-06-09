@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Box, Paper, Typography, TextField, Button, Alert,
@@ -12,9 +12,9 @@ import HowToRegIcon from '@mui/icons-material/HowToReg'
 import { supabase } from '../supabaseClient'
 
 const BRANDS = [
-  { key: 'benz', logo: '/logos/mercedes.webp' },
-  { key: 'audi', logo: '/logos/audi.svg' },
-  { key: 'bmw',  logo: '/logos/bmw.svg' },
+  { key: 'benz', logo: `${import.meta.env.BASE_URL}logos/mercedes.webp` },
+  { key: 'audi', logo: `${import.meta.env.BASE_URL}logos/audi.svg` },
+  { key: 'bmw',  logo: `${import.meta.env.BASE_URL}logos/bmw.svg` },
 ]
 
 // 아이디로 내부 이메일 생성 (Supabase Auth는 이메일 필수)

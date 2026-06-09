@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   AppBar, Toolbar, Typography, Button, Box, IconButton,
@@ -12,9 +12,9 @@ import AddIcon from '@mui/icons-material/Add'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 
 const BRANDS = [
-  { key: 'benz',  label: 'BENZ',  logo: '/logos/mercedes.webp' },
-  { key: 'audi',  label: 'AUDI',  logo: '/logos/audi.svg'      },
-  { key: 'bmw',   label: 'BMW',   logo: '/logos/bmw.svg'       },
+  { key: 'benz',  label: 'BENZ',  logo: `${import.meta.env.BASE_URL}logos/mercedes.webp` },
+  { key: 'audi',  label: 'AUDI',  logo: `${import.meta.env.BASE_URL}logos/audi.svg`      },
+  { key: 'bmw',   label: 'BMW',   logo: `${import.meta.env.BASE_URL}logos/bmw.svg`       },
 ]
 
 function BrandLogo({ src, alt, size = 28 }) {

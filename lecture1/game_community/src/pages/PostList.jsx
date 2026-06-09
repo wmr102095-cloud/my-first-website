@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box, Container, Typography, Paper, Button,
@@ -15,9 +15,9 @@ import { supabase } from '../supabaseClient'
 
 const BRANDS = [
   { key: 'all',  label: '전체',  logo: null },
-  { key: 'benz', label: 'BENZ', logo: '/logos/mercedes.webp' },
-  { key: 'audi', label: 'AUDI', logo: '/logos/audi.svg'      },
-  { key: 'bmw',  label: 'BMW',  logo: '/logos/bmw.svg'       },
+  { key: 'benz', label: 'BENZ', logo: `${import.meta.env.BASE_URL}logos/mercedes.webp` },
+  { key: 'audi', label: 'AUDI', logo: `${import.meta.env.BASE_URL}logos/audi.svg`      },
+  { key: 'bmw',  label: 'BMW',  logo: `${import.meta.env.BASE_URL}logos/bmw.svg`       },
 ]
 
 const BRAND_COLORS = {
