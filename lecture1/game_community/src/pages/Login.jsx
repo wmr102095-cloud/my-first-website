@@ -4,16 +4,23 @@ import {
   Box, Paper, Typography, TextField, Button, Alert,
   InputAdornment, IconButton, Divider,
 } from '@mui/material'
-import EmailIcon from '@mui/icons-material/Email'
+import PersonIcon from '@mui/icons-material/Person'
 import LockIcon from '@mui/icons-material/Lock'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import LoginIcon from '@mui/icons-material/Login'
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'
 import { supabase } from '../supabaseClient'
 
+const BRANDS = [
+  { key: 'benz', logo: '/logos/mercedes.webp' },
+  { key: 'audi', logo: '/logos/audi.svg' },
+  { key: 'bmw',  logo: '/logos/bmw.svg' },
+]
+
+const toFakeEmail = (username) => `${username.trim().toLowerCase()}@benzcomm.com`
+
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
@@ -21,17 +28,20 @@ export default function Login() {
   const navigate = useNavigate()
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError('이메일과 비밀번호를 입력해주세요.')
+    if (!username.trim() || !password.trim()) {
+      setError('아이디와 비밀번호를 입력해주세요.')
       return
     }
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: toFakeEmail(username),
+      password,
+    })
 
     if (error) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+      setError('아이디 또는 비밀번호가 올바르지 않습니다.')
       setLoading(false)
     } else {
       navigate('/')
@@ -57,21 +67,17 @@ export default function Login() {
       }}>
         {/* 로고 */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <DirectionsCarIcon sx={{
-            fontSize: 52,
-            color: 'primary.main',
-            filter: 'drop-shadow(0 0 10px rgba(232,232,232,0.5))',
-            mb: 1,
-          }} />
-          <Typography variant="h5" fontWeight={800} sx={{
-            color: 'primary.main',
-            textShadow: '0 0 10px rgba(232,232,232,0.3)',
-            letterSpacing: 6,
-          }}>
-            BENZ
-          </Typography>
+          <Box
+            onClick={() => navigate('/')}
+            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2.5, mb: 1.5, cursor: 'pointer' }}
+          >
+            {BRANDS.map(b => (
+              <img key={b.key} src={b.logo} alt={b.key}
+                style={{ width: 36, height: 36, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+            ))}
+          </Box>
           <Typography variant="body2" color="text.secondary" mt={0.5}>
-            벤츠 공식 커뮤니티
+            자동차 커뮤니티
           </Typography>
         </Box>
 
@@ -79,15 +85,14 @@ export default function Login() {
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
-            label="이메일"
-            type="email"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); setError('') }}
+            label="아이디"
+            value={username}
+            onChange={(e) => { setUsername(e.target.value); setError('') }}
             fullWidth
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  <PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
                 </InputAdornment>
               ),
             }}

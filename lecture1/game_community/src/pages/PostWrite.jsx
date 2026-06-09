@@ -8,14 +8,22 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SendIcon from '@mui/icons-material/Send'
 import { supabase } from '../supabaseClient'
 
+const BRANDS = [
+  { key: 'benz', label: 'BENZ', logo: '/logos/mercedes.webp', color: '#e8e8e8' },
+  { key: 'audi', label: 'AUDI', logo: '/logos/audi.svg',      color: '#e30613' },
+  { key: 'bmw',  label: 'BMW',  logo: '/logos/bmw.svg',       color: '#1c69d4' },
+]
+
 export default function PostWrite({ profile }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [brand, setBrand] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async () => {
+    if (!brand) { setError('브랜드를 선택해주세요.'); return }
     if (!title.trim()) { setError('제목을 입력해주세요.'); return }
     if (!content.trim()) { setError('내용을 입력해주세요.'); return }
     setLoading(true)
@@ -23,7 +31,7 @@ export default function PostWrite({ profile }) {
 
     const { data, error } = await supabase
       .from('posts')
-      .insert({ title: title.trim(), content: content.trim(), user_id: profile.id })
+      .insert({ title: title.trim(), content: content.trim(), brand, user_id: profile.id })
       .select('id')
       .single()
 
@@ -52,7 +60,53 @@ export default function PostWrite({ profile }) {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {/* 브랜드 선택 */}
+          <Box>
+            <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>
+              브랜드 선택 *
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              {BRANDS.map(b => {
+                const selected = brand === b.key
+                return (
+                  <Box
+                    key={b.key}
+                    onClick={() => { setBrand(b.key); setError('') }}
+                    sx={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+                      px: 2.5, py: 1.5,
+                      border: `1.5px solid ${selected ? b.color : 'rgba(232,232,232,0.15)'}`,
+                      borderRadius: 2,
+                      cursor: 'pointer',
+                      bgcolor: selected ? `${b.color}12` : 'transparent',
+                      transition: 'all 0.15s',
+                      minWidth: 80,
+                      '&:hover': { borderColor: b.color, bgcolor: `${b.color}08` },
+                    }}
+                  >
+                    <img
+                      src={b.logo}
+                      alt={b.label}
+                      style={{
+                        width: 32, height: 32, objectFit: 'contain',
+                        filter: 'brightness(0) invert(1)',
+                        opacity: selected ? 1 : 0.5,
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      fontWeight={700}
+                      sx={{ color: selected ? b.color : 'text.secondary', letterSpacing: 1 }}
+                    >
+                      {b.label}
+                    </Typography>
+                  </Box>
+                )
+              })}
+            </Box>
+          </Box>
+
           <TextField
             label="제목"
             value={title}

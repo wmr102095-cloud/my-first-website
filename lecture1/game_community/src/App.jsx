@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Box, CircularProgress } from '@mui/material'
 import { supabase } from './supabaseClient'
 import Navbar from './components/Navbar'
@@ -51,7 +51,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -75,6 +75,6 @@ export default function App() {
           />
         </Routes>
       </Box>
-    </BrowserRouter>
+    </HashRouter>
   )
 }

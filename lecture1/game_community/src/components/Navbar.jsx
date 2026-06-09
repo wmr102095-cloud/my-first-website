@@ -10,7 +10,28 @@ import LoginIcon from '@mui/icons-material/Login'
 import LogoutIcon from '@mui/icons-material/Logout'
 import AddIcon from '@mui/icons-material/Add'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'
+
+const BRANDS = [
+  { key: 'benz',  label: 'BENZ',  logo: '/logos/mercedes.webp' },
+  { key: 'audi',  label: 'AUDI',  logo: '/logos/audi.svg'      },
+  { key: 'bmw',   label: 'BMW',   logo: '/logos/bmw.svg'       },
+]
+
+function BrandLogo({ src, alt, size = 28 }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      style={{
+        width: size,
+        height: size,
+        objectFit: 'contain',
+        filter: 'brightness(0) invert(1)',
+        opacity: 0.9,
+      }}
+    />
+  )
+}
 
 export default function Navbar({ profile, onLogout }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -32,24 +53,19 @@ export default function Navbar({ profile, onLogout }) {
             <MenuIcon />
           </IconButton>
 
-          {/* 로고 */}
+          {/* 로고 영역 */}
           <Box
             sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', flexGrow: { xs: 1, sm: 0 } }}
             onClick={() => navigate('/')}
           >
-            <DirectionsCarIcon sx={{
-              color: 'primary.main',
-              fontSize: 28,
-              filter: 'drop-shadow(0 0 6px rgba(232,232,232,0.5))',
-            }} />
-            <Typography variant="h6" sx={{
-              color: 'primary.main',
-              fontWeight: 800,
-              letterSpacing: 4,
-              textShadow: '0 0 10px rgba(232,232,232,0.4)',
-            }}>
-              BENZ
-            </Typography>
+            {BRANDS.map((b, i) => (
+              <Box key={b.key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {i > 0 && (
+                  <Typography sx={{ color: 'rgba(232,232,232,0.2)', fontSize: 16, userSelect: 'none' }}>·</Typography>
+                )}
+                <BrandLogo src={b.logo} alt={b.label} size={26} />
+              </Box>
+            ))}
           </Box>
 
           {/* 데스크톱 메뉴 */}
@@ -123,10 +139,9 @@ export default function Navbar({ profile, onLogout }) {
       <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={{ width: 260, bgcolor: 'background.paper', height: '100%', pt: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, mb: 2 }}>
-            <DirectionsCarIcon sx={{ color: 'primary.main' }} />
-            <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 3 }}>
-              BENZ
-            </Typography>
+            {BRANDS.map((b) => (
+              <BrandLogo key={b.key} src={b.logo} alt={b.label} size={24} />
+            ))}
           </Box>
           <Divider />
           {profile && (

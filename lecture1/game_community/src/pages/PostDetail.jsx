@@ -13,6 +13,12 @@ import SendIcon from '@mui/icons-material/Send'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { supabase } from '../supabaseClient'
 
+const BRANDS = {
+  benz: { label: 'BENZ', logo: '/logos/mercedes.webp', color: '#e8e8e8' },
+  audi: { label: 'AUDI', logo: '/logos/audi.svg',      color: '#e30613' },
+  bmw:  { label: 'BMW',  logo: '/logos/bmw.svg',       color: '#1c69d4' },
+}
+
 export default function PostDetail({ profile }) {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -29,7 +35,7 @@ export default function PostDetail({ profile }) {
     const { data, error } = await supabase
       .from('posts')
       .select(`
-        id, title, content, created_at,
+        id, title, content, brand, created_at,
         users(id, username),
         likes(id, user_id),
         comments(id, content, created_at, users(id, username))
@@ -102,6 +108,8 @@ export default function PostDetail({ profile }) {
     )
   }
 
+  const brandInfo = post.brand ? BRANDS[post.brand] : null
+
   return (
     <Container maxWidth="md" sx={{ py: 3, mt: '64px' }}>
       <Button
@@ -113,7 +121,27 @@ export default function PostDetail({ profile }) {
       </Button>
 
       {/* 게시글 본문 */}
-      <Paper sx={{ p: 3, mb: 2 }}>
+      <Paper sx={{
+        p: 3, mb: 2,
+        ...(brandInfo && {
+          borderTop: `2px solid ${brandInfo.color}66`,
+          boxShadow: `0 0 20px ${brandInfo.color}08`,
+        }),
+      }}>
+        {/* 브랜드 배지 */}
+        {brandInfo && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <img
+              src={brandInfo.logo}
+              alt={brandInfo.label}
+              style={{ width: 16, height: 16, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }}
+            />
+            <Typography variant="caption" fontWeight={700} sx={{ color: brandInfo.color, letterSpacing: 1 }}>
+              {brandInfo.label}
+            </Typography>
+          </Box>
+        )}
+
         <Typography variant="h5" fontWeight={700} sx={{ color: 'text.primary', mb: 2, lineHeight: 1.4 }}>
           {post.title}
         </Typography>
