@@ -14,6 +14,8 @@ import Section12_Menu from './components/sections/Section12_Menu'
 import Section13_Sidebar from './components/sections/Section13_Sidebar'
 import Section14_Hover from './components/sections/Section14_Hover'
 import Section15_Swipe from './components/sections/Section15_Swipe'
+import Section16_FlexNavigation from './components/sections/Section16_FlexNavigation'
+import Section17_Checklist from './components/sections/Section17_Checklist'
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
         <Section13_Sidebar />
         <Section14_Hover />
         <Section15_Swipe />
+        <Section16_FlexNavigation />
+        <Section17_Checklist />
       </Container>
     </Box>
   )
