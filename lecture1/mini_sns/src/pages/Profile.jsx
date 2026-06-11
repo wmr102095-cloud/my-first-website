@@ -1,12 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Box, IconButton, Typography, Avatar, CircularProgress, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Divider } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import EditIcon from '@mui/icons-material/Edit'
 import LogoutIcon from '@mui/icons-material/Logout'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
+
+// none | i_sent | they_sent | friends
+const FRIEND_NONE = 'none'
+const FRIEND_I_SENT = 'i_sent'
+const FRIEND_THEY_SENT = 'they_sent'
+const FRIEND_ACCEPTED = 'friends'
 
 export default function Profile() {
   const { id } = useParams()
@@ -17,24 +28,102 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [editForm, setEditForm] = useState({ display_name: '', bio: '' })
+  const [friendStatus, setFriendStatus] = useState(FRIEND_NONE)
+  const [friendReqId, setFriendReqId] = useState(null)
+  const [friendActionLoading, setFriendActionLoading] = useState(false)
 
   const isMe = myProfile && String(myProfile.id) === String(id)
 
-  useEffect(() => { fetchUser(); fetchPosts() }, [id])
-
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     const { data } = await supabase.from('sns_users').select('*').eq('id', id).single()
     setUser(data)
-    setLoading(false)
-  }
+  }, [id])
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     const { data } = await supabase
       .from('sns_posts')
       .select('id, image_url, likes_count, created_at')
       .eq('user_id', id)
       .order('created_at', { ascending: false })
     setPosts(data || [])
+  }, [id])
+
+  const fetchFriendStatus = useCallback(async () => {
+    if (!myProfile || isMe) return
+    const myId = myProfile.id
+    const theirId = Number(id)
+    const { data } = await supabase
+      .from('sns_friend_requests')
+      .select('id, sender_id, receiver_id, status')
+      .or(`and(sender_id.eq.${myId},receiver_id.eq.${theirId}),and(sender_id.eq.${theirId},receiver_id.eq.${myId})`)
+      .maybeSingle()
+
+    if (!data) { setFriendStatus(FRIEND_NONE); setFriendReqId(null) }
+    else if (data.status === 'accepted') { setFriendStatus(FRIEND_ACCEPTED); setFriendReqId(data.id) }
+    else if (String(data.sender_id) === String(myId)) { setFriendStatus(FRIEND_I_SENT); setFriendReqId(data.id) }
+    else { setFriendStatus(FRIEND_THEY_SENT); setFriendReqId(data.id) }
+  }, [myProfile, id, isMe])
+
+  useEffect(() => {
+    const init = async () => {
+      await Promise.all([fetchUser(), fetchPosts(), fetchFriendStatus()])
+      setLoading(false)
+    }
+    init()
+  }, [fetchUser, fetchPosts, fetchFriendStatus])
+
+  const sendFriendRequest = async () => {
+    setFriendActionLoading(true)
+    const { data } = await supabase
+      .from('sns_friend_requests')
+      .insert({ sender_id: myProfile.id, receiver_id: Number(id) })
+      .select('id').single()
+    if (data) { setFriendStatus(FRIEND_I_SENT); setFriendReqId(data.id) }
+    setFriendActionLoading(false)
+  }
+
+  const cancelRequest = async () => {
+    setFriendActionLoading(true)
+    await supabase.from('sns_friend_requests').delete().eq('id', friendReqId)
+    setFriendStatus(FRIEND_NONE); setFriendReqId(null)
+    setFriendActionLoading(false)
+  }
+
+  const acceptRequest = async () => {
+    setFriendActionLoading(true)
+    await supabase.from('sns_friend_requests').update({ status: 'accepted' }).eq('id', friendReqId)
+    setFriendStatus(FRIEND_ACCEPTED)
+    setFriendActionLoading(false)
+  }
+
+  const declineRequest = async () => {
+    setFriendActionLoading(true)
+    await supabase.from('sns_friend_requests').delete().eq('id', friendReqId)
+    setFriendStatus(FRIEND_NONE); setFriendReqId(null)
+    setFriendActionLoading(false)
+  }
+
+  const unfriend = async () => {
+    setFriendActionLoading(true)
+    await supabase.from('sns_friend_requests').delete().eq('id', friendReqId)
+    setFriendStatus(FRIEND_NONE); setFriendReqId(null)
+    setFriendActionLoading(false)
+  }
+
+  const goToMessage = async () => {
+    const minId = Math.min(myProfile.id, Number(id))
+    const maxId = Math.max(myProfile.id, Number(id))
+    let { data: conv } = await supabase
+      .from('sns_conversations').select('id')
+      .eq('user1_id', minId).eq('user2_id', maxId).maybeSingle()
+    if (!conv) {
+      const { data: created } = await supabase
+        .from('sns_conversations')
+        .insert({ user1_id: minId, user2_id: maxId })
+        .select('id').single()
+      conv = created
+    }
+    if (conv) navigate(`/messages/${conv.id}`)
   }
 
   const handleEdit = async () => {
@@ -101,6 +190,7 @@ export default function Profile() {
           </Typography>
         )}
 
+        {/* 내 프로필: 편집 + 로그아웃 */}
         {isMe && (
           <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
             <Button
@@ -119,6 +209,84 @@ export default function Profile() {
             >
               로그아웃
             </Button>
+          </Box>
+        )}
+
+        {/* 상대 프로필: 메시지 + 친구 요청 버튼 */}
+        {!isMe && myProfile && (
+          <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+            {/* 메시지 버튼 */}
+            <Button
+              variant="outlined" size="small"
+              startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: '0.9rem' }} />}
+              onClick={goToMessage}
+              sx={{ flex: 1, height: 34, fontSize: '0.82rem', fontWeight: 600, borderColor: '#2a475e', color: '#66c0f4', '&:hover': { borderColor: '#66c0f4', bgcolor: 'rgba(102,192,244,0.06)' } }}
+            >
+              메시지
+            </Button>
+
+            {/* 친구 없음 → 친구 추가 */}
+            {friendStatus === FRIEND_NONE && (
+              <Button
+                variant="contained" size="small"
+                startIcon={friendActionLoading ? <CircularProgress size={12} sx={{ color: 'inherit' }} /> : <PersonAddIcon sx={{ fontSize: '0.9rem' }} />}
+                onClick={sendFriendRequest}
+                disabled={friendActionLoading}
+                sx={{ flex: 1, height: 34, fontSize: '0.82rem', fontWeight: 600, bgcolor: '#2a5f8f', boxShadow: 'none', '&:hover': { bgcolor: '#3572a8' } }}
+              >
+                친구 추가
+              </Button>
+            )}
+
+            {/* 내가 요청 보냄 → 요청 취소 */}
+            {friendStatus === FRIEND_I_SENT && (
+              <Button
+                variant="outlined" size="small"
+                startIcon={friendActionLoading ? <CircularProgress size={12} sx={{ color: 'inherit' }} /> : <HourglassEmptyIcon sx={{ fontSize: '0.9rem' }} />}
+                onClick={cancelRequest}
+                disabled={friendActionLoading}
+                sx={{ flex: 1, height: 34, fontSize: '0.82rem', fontWeight: 600, borderColor: '#2a475e', color: '#8fa4b9', '&:hover': { borderColor: '#ef4444', color: '#ef4444' } }}
+              >
+                요청 취소
+              </Button>
+            )}
+
+            {/* 상대가 요청 보냄 → 수락 / 거절 */}
+            {friendStatus === FRIEND_THEY_SENT && (
+              <>
+                <Button
+                  variant="contained" size="small"
+                  startIcon={friendActionLoading ? <CircularProgress size={12} sx={{ color: 'inherit' }} /> : <CheckIcon sx={{ fontSize: '0.9rem' }} />}
+                  onClick={acceptRequest}
+                  disabled={friendActionLoading}
+                  sx={{ flex: 1, height: 34, fontSize: '0.82rem', fontWeight: 600, bgcolor: '#2a5f8f', boxShadow: 'none', '&:hover': { bgcolor: '#3572a8' } }}
+                >
+                  수락
+                </Button>
+                <Button
+                  variant="outlined" size="small"
+                  startIcon={<CloseIcon sx={{ fontSize: '0.9rem' }} />}
+                  onClick={declineRequest}
+                  disabled={friendActionLoading}
+                  sx={{ flex: 1, height: 34, fontSize: '0.82rem', fontWeight: 600, borderColor: '#2a475e', color: '#8fa4b9', '&:hover': { borderColor: '#ef4444', color: '#ef4444' } }}
+                >
+                  거절
+                </Button>
+              </>
+            )}
+
+            {/* 이미 친구 */}
+            {friendStatus === FRIEND_ACCEPTED && (
+              <Button
+                variant="outlined" size="small"
+                startIcon={<CheckIcon sx={{ fontSize: '0.9rem' }} />}
+                onClick={unfriend}
+                disabled={friendActionLoading}
+                sx={{ flex: 1, height: 34, fontSize: '0.82rem', fontWeight: 600, borderColor: '#3d6b8e', color: '#66c0f4', '&:hover': { borderColor: '#ef4444', color: '#ef4444', bgcolor: 'rgba(239,68,68,0.06)' } }}
+              >
+                친구
+              </Button>
+            )}
           </Box>
         )}
       </Box>
@@ -140,8 +308,7 @@ export default function Profile() {
               sx={{ position: 'relative', paddingTop: '100%', cursor: 'pointer', '&:hover': { opacity: 0.85 } }}
             >
               {post.image_url ? (
-                <Box
-                  component="img" src={post.image_url} alt=""
+                <Box component="img" src={post.image_url} alt=""
                   sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
@@ -152,7 +319,6 @@ export default function Profile() {
             </Box>
           ))}
         </Box>
-
         {posts.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Typography sx={{ color: '#8fa4b9', fontSize: '0.9rem' }}>아직 게시물이 없습니다.</Typography>
@@ -162,8 +328,7 @@ export default function Profile() {
 
       {/* 프로필 편집 다이얼로그 */}
       <Dialog
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
+        open={editOpen} onClose={() => setEditOpen(false)}
         fullWidth maxWidth="xs"
         PaperProps={{ sx: { bgcolor: '#16202d', border: '1px solid #2a475e', borderRadius: 2 } }}
       >
