@@ -21,7 +21,7 @@ export default function TopBar({ title }) {
             userSelect: 'none',
           }}
         >
-          {title || 'MiniSNS'}
+          {title || 'StyX'}
         </Typography>
         <IconButton onClick={() => navigate('/write')} sx={{ color: '#262626' }}>
           <AddBoxOutlinedIcon />

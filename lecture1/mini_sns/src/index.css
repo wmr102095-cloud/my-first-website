@@ -1,5 +1,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100%; background: #fafafa; }
+html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100%; background: #1b2838; }
 body { font-family: 'Roboto', sans-serif; -webkit-font-smoothing: antialiased; }
-::-webkit-scrollbar { display: none; }
-.page { padding-top: 56px; padding-bottom: 64px; max-width: 600px; margin: 0 auto; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1b2838; }
+::-webkit-scrollbar-thumb { background: #4c6b7e; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #66c0f4; }

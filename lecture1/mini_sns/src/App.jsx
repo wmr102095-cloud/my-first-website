@@ -1,22 +1,33 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Box, CircularProgress } from '@mui/material'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Store from './pages/Store'
+import Library from './pages/Library'
+import GameDetail from './pages/GameDetail'
 import Feed from './pages/Feed'
 import PostDetail from './pages/PostDetail'
 import PostWrite from './pages/PostWrite'
 import Profile from './pages/Profile'
-import Search from './pages/Search'
 
-function ProtectedRoute({ children }) {
+function LauncherLayout() {
   const { session, loading } = useAuth()
   if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <CircularProgress size={28} sx={{ color: '#0095f6' }} />
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#1b2838' }}>
+      <CircularProgress size={28} sx={{ color: '#66c0f4' }} />
     </Box>
   )
-  return session ? children : <Navigate to="/login" replace />
+  if (!session) return <Navigate to="/login" replace />
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#1b2838' }}>
+      <Sidebar />
+      <Box sx={{ flex: 1, ml: '220px', overflowY: 'auto', minHeight: '100vh' }}>
+        <Outlet />
+      </Box>
+    </Box>
+  )
 }
 
 function PublicRoute({ children }) {
@@ -30,12 +41,16 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
-      <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-      <Route path="/write" element={<ProtectedRoute><PostWrite /></ProtectedRoute>} />
-      <Route path="/post/:id" element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
-      <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route element={<LauncherLayout />}>
+        <Route path="/" element={<Store />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/game/:id" element={<GameDetail />} />
+        <Route path="/community" element={<Feed />} />
+        <Route path="/write" element={<PostWrite />} />
+        <Route path="/post/:id" element={<PostDetail />} />
+        <Route path="/profile/:id" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
     </Routes>
   )
 }
@@ -44,9 +59,7 @@ export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
-        <Box sx={{ maxWidth: 600, mx: 'auto', minHeight: '100vh', bgcolor: '#fafafa' }}>
-          <AppRoutes />
-        </Box>
+        <AppRoutes />
       </HashRouter>
     </AuthProvider>
   )

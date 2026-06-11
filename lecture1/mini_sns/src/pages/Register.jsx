@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Typography, TextField, Button, Alert, CircularProgress } from '@mui/material'
+import { Box, Typography, TextField, Button, Alert, CircularProgress, Divider } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
@@ -9,23 +9,14 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const set = (k) => (e) => { setForm(f => ({ ...f, [k]: e.target.value })); setError('') }
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setError('') }
 
   const handleRegister = async () => {
     const { username, password, confirm, name } = form
-
-    if (!username.trim() || !password || !confirm || !name.trim()) {
-      setError('모든 항목을 입력해주세요.'); return
-    }
-    if (username.trim().length < 3) {
-      setError('아이디는 3자 이상이어야 합니다.'); return
-    }
-    if (password.length < 6) {
-      setError('비밀번호는 6자 이상이어야 합니다.'); return
-    }
-    if (password !== confirm) {
-      setError('비밀번호가 일치하지 않습니다.'); return
-    }
+    if (!username.trim() || !password || !confirm || !name.trim()) { setError('모든 항목을 입력해주세요.'); return }
+    if (username.trim().length < 3) { setError('아이디는 3자 이상이어야 합니다.'); return }
+    if (password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return }
+    if (password !== confirm) { setError('비밀번호가 일치하지 않습니다.'); return }
 
     setLoading(true)
     setError('')
@@ -33,36 +24,17 @@ export default function Register() {
     const id = username.trim().toLowerCase()
     const fakeEmail = `${id}@minisns.app`
 
-    // 아이디 중복 확인
-    const { data: existing } = await supabase
-      .from('sns_users')
-      .select('id')
-      .eq('username', id)
-      .maybeSingle()
+    const { data: existing } = await supabase.from('sns_users').select('id').eq('username', id).maybeSingle()
+    if (existing) { setError('이미 사용 중인 아이디입니다.'); setLoading(false); return }
 
-    if (existing) {
-      setError('이미 사용 중인 아이디입니다.'); setLoading(false); return
-    }
-
-    // Supabase Auth 회원가입 (가상 이메일 사용)
-    // → DB 트리거가 sns_users 프로필 자동 생성
     const { error: signUpErr } = await supabase.auth.signUp({
       email: fakeEmail,
       password,
-      options: {
-        data: {
-          username: id,
-          display_name: name.trim(),
-        },
-      },
+      options: { data: { username: id, display_name: name.trim() } },
     })
 
     if (signUpErr) {
-      if (signUpErr.message.toLowerCase().includes('already')) {
-        setError('이미 사용 중인 아이디입니다.')
-      } else {
-        setError(signUpErr.message)
-      }
+      setError(signUpErr.message.toLowerCase().includes('already') ? '이미 사용 중인 아이디입니다.' : signUpErr.message)
       setLoading(false)
       return
     }
@@ -72,80 +44,60 @@ export default function Register() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', px: 3 }}>
-      <Box sx={{ width: '100%', maxWidth: 360 }}>
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #dbdbdb', borderRadius: 2, p: 4, mb: 2 }}>
-          <Typography sx={{ fontSize: '2.8rem', color: '#262626', mb: 0.5, fontWeight: 800, letterSpacing: '0.06em', textAlign: 'center' }}>
-            MiniSNS
+    <Box sx={{ minHeight: '100vh', bgcolor: '#1b2838', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+      <Box sx={{ width: '100%', maxWidth: 380 }}>
+        {/* Logo */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography sx={{
+            fontSize: '3.5rem', fontWeight: 900, letterSpacing: '0.12em',
+            background: 'linear-gradient(135deg, #66c0f4, #1a44c2)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>
+            StyX
           </Typography>
-          <Typography color="text.secondary" fontSize="0.9rem" fontWeight={600} textAlign="center" mb={3}>
-            친구들의 일상을 함께 공유해보세요.
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: '0.82rem' }}>{error}</Alert>
-          )}
-
-          <TextField
-            fullWidth
-            placeholder="아이디 (3자 이상, 영문·숫자)"
-            size="small"
-            value={form.username}
-            onChange={set('username')}
-            sx={{ mb: 1.5 }}
-            inputProps={{ maxLength: 20 }}
-          />
-          <TextField
-            fullWidth
-            placeholder="이름"
-            size="small"
-            value={form.name}
-            onChange={set('name')}
-            sx={{ mb: 1.5 }}
-            inputProps={{ maxLength: 30 }}
-          />
-          <TextField
-            fullWidth
-            placeholder="비밀번호 (6자 이상)"
-            type="password"
-            size="small"
-            value={form.password}
-            onChange={set('password')}
-            sx={{ mb: 1.5 }}
-          />
-          <TextField
-            fullWidth
-            placeholder="비밀번호 확인"
-            type="password"
-            size="small"
-            value={form.confirm}
-            onChange={set('confirm')}
-            onKeyDown={e => e.key === 'Enter' && handleRegister()}
-            sx={{ mb: 2.5 }}
-          />
-
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleRegister}
-            disabled={loading}
-            sx={{ height: 40, borderRadius: 2, bgcolor: '#0095f6', '&:hover': { bgcolor: '#1877f2' }, boxShadow: 'none', fontSize: '0.9rem' }}
-          >
-            {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : '가입하기'}
-          </Button>
-
-          <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={2} lineHeight={1.6}>
-            가입하면 MiniSNS의 약관에 동의하게 됩니다.
+          <Typography sx={{ color: '#8fa4b9', fontSize: '0.88rem', mt: 0.5 }}>
+            무료 계정을 만들고 게임을 즐겨보세요
           </Typography>
         </Box>
 
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #dbdbdb', borderRadius: 2, p: 3, textAlign: 'center' }}>
-          <Typography variant="body2" fontSize="0.9rem">
-            계정이 있으신가요?{' '}
+        <Box sx={{ bgcolor: '#16202d', border: '1px solid #2a475e', borderRadius: 1, p: 3.5 }}>
+          {error && <Alert severity="error" sx={{ mb: 2, bgcolor: 'rgba(231,76,60,0.15)', color: '#e74c3c', border: '1px solid rgba(231,76,60,0.3)', '& .MuiAlert-icon': { color: '#e74c3c' } }}>{error}</Alert>}
+
+          <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mb: 0.5, fontWeight: 600 }}>아이디</Typography>
+          <TextField fullWidth placeholder="영문, 숫자 3자 이상" size="small" value={form.username} onChange={set('username')} sx={{ mb: 2 }} inputProps={{ maxLength: 20 }} />
+
+          <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mb: 0.5, fontWeight: 600 }}>이름</Typography>
+          <TextField fullWidth placeholder="표시될 이름" size="small" value={form.name} onChange={set('name')} sx={{ mb: 2 }} inputProps={{ maxLength: 30 }} />
+
+          <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mb: 0.5, fontWeight: 600 }}>비밀번호</Typography>
+          <TextField fullWidth placeholder="6자 이상" type="password" size="small" value={form.password} onChange={set('password')} sx={{ mb: 2 }} />
+
+          <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mb: 0.5, fontWeight: 600 }}>비밀번호 확인</Typography>
+          <TextField
+            fullWidth placeholder="비밀번호 재입력" type="password" size="small"
+            value={form.confirm} onChange={set('confirm')}
+            onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
+            sx={{ mb: 2.5 }}
+          />
+
+          <Button fullWidth variant="contained" color="primary" onClick={handleRegister} disabled={loading} sx={{ height: 42, fontSize: '0.95rem', mb: 1.5 }}>
+            {loading ? <CircularProgress size={20} sx={{ color: '#c6d4df' }} /> : '계정 만들기'}
+          </Button>
+
+          <Typography sx={{ fontSize: '0.72rem', color: '#8fa4b9', textAlign: 'center', lineHeight: 1.6 }}>
+            계정을 만들면 StyX의 서비스 약관에 동의하게 됩니다.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 2, borderColor: '#2a475e' }} />
+
+        <Box sx={{ bgcolor: '#16202d', border: '1px solid #2a475e', borderRadius: 1, p: 2.5, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: '0.88rem', color: '#8fa4b9' }}>
+            이미 계정이 있으신가요?{' '}
             <Typography
               component="span"
               onClick={() => navigate('/login')}
-              sx={{ color: '#0095f6', fontWeight: 700, cursor: 'pointer' }}
+              sx={{ color: '#66c0f4', fontWeight: 700, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
             >
               로그인
             </Typography>
