@@ -12,6 +12,7 @@ import Feed from './pages/Feed'
 import PostDetail from './pages/PostDetail'
 import PostWrite from './pages/PostWrite'
 import Profile from './pages/Profile'
+import Friends from './pages/Friends'
 
 function LauncherLayout() {
   const { session, loading } = useAuth()
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="/write" element={<PostWrite />} />
         <Route path="/post/:id" element={<PostDetail />} />
         <Route path="/profile/:id" element={<Profile />} />
+        <Route path="/friends" element={<Friends />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

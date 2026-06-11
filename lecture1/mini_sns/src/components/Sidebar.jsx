@@ -2,7 +2,7 @@ import { Box, Typography, Avatar, List, ListItemButton, ListItemIcon, ListItemTe
 import StorefrontIcon from '@mui/icons-material/Storefront'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import ForumIcon from '@mui/icons-material/Forum'
-import PersonIcon from '@mui/icons-material/Person'
+import PeopleIcon from '@mui/icons-material/People'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -88,11 +88,17 @@ export default function Sidebar() {
         <Divider />
         <List dense sx={{ px: 1, py: 1 }}>
           <ListItemButton
-            onClick={() => profile && navigate(`/profile/${profile.id}`)}
-            sx={{ borderRadius: 1, '&:hover': { bgcolor: '#1e2d3d' }, '& .MuiListItemIcon-root': { color: '#8fa4b9', minWidth: 34 } }}
+            onClick={() => navigate('/friends')}
+            selected={active('/friends')}
+            sx={{
+              borderRadius: 1,
+              '&.Mui-selected': { bgcolor: '#2a475e', color: '#66c0f4', '& .MuiListItemIcon-root': { color: '#66c0f4' } },
+              '&:hover': { bgcolor: '#1e2d3d' },
+              '& .MuiListItemIcon-root': { color: '#8fa4b9', minWidth: 34 },
+            }}
           >
-            <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
-            <ListItemText primary="내 프로필" primaryTypographyProps={{ fontSize: '0.85rem', color: '#8fa4b9' }} />
+            <ListItemIcon><PeopleIcon fontSize="small" /></ListItemIcon>
+            <ListItemText primary="친구 목록" primaryTypographyProps={{ fontSize: '0.85rem', color: active('/friends') ? '#66c0f4' : '#8fa4b9' }} />
           </ListItemButton>
         </List>
       </Box>
