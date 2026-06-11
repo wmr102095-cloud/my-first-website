@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabaseClient'
 
 const NAV = [
-  { label: '스토어', icon: <StorefrontIcon fontSize="small" />, path: '/' },
+  { label: 'ALL GAMES', icon: <StorefrontIcon fontSize="small" />, path: '/' },
   { label: '라이브러리', icon: <VideoLibraryIcon fontSize="small" />, path: '/library' },
   { label: '커뮤니티', icon: <ForumIcon fontSize="small" />, path: '/community' },
 ]
@@ -60,30 +60,6 @@ export default function Sidebar() {
           StyX
         </Typography>
       </Box>
-
-      {/* User info */}
-      {profile && (
-        <Box sx={{ px: 2, pb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Avatar
-            onClick={() => navigate(`/profile/${profile.id}`)}
-            sx={{ width: 38, height: 38, bgcolor: '#2a475e', fontSize: '1rem', cursor: 'pointer', border: '2px solid #3d6b8e' }}
-          >
-            {profile.display_name?.[0]?.toUpperCase()}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#c6d4df', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile.display_name}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#5ba32b' }} />
-              <Typography sx={{ fontSize: '0.72rem', color: '#8fa4b9' }}>온라인</Typography>
-            </Box>
-          </Box>
-          <IconButton onClick={handleLogout} size="small" sx={{ color: '#8fa4b9', '&:hover': { color: '#c6d4df' } }}>
-            <LogoutIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      )}
 
       <Divider />
 

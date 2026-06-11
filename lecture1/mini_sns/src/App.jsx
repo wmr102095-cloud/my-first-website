@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Box, CircularProgress } from '@mui/material'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Sidebar from './components/Sidebar'
+import TopHeader from './components/TopHeader'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Store from './pages/Store'
@@ -23,8 +24,11 @@ function LauncherLayout() {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#1b2838' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: '220px', overflowY: 'auto', minHeight: '100vh' }}>
-        <Outlet />
+      <Box sx={{ flex: 1, ml: '220px', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <TopHeader />
+        <Box sx={{ flex: 1, overflowY: 'auto' }}>
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   )
