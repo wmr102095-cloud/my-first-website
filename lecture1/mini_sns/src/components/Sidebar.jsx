@@ -2,6 +2,7 @@ import { Box, Typography, Avatar, List, ListItemButton, ListItemIcon, ListItemTe
 import StorefrontIcon from '@mui/icons-material/Storefront'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import ForumIcon from '@mui/icons-material/Forum'
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import PeopleIcon from '@mui/icons-material/People'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -12,6 +13,7 @@ const NAV = [
   { label: 'ALL GAMES', icon: <StorefrontIcon fontSize="small" />, path: '/' },
   { label: '라이브러리', icon: <VideoLibraryIcon fontSize="small" />, path: '/library' },
   { label: '커뮤니티', icon: <ForumIcon fontSize="small" />, path: '/community' },
+  { label: '메시지', icon: <ChatBubbleOutlineIcon fontSize="small" />, path: '/messages' },
 ]
 
 export default function Sidebar() {

@@ -5,6 +5,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove'
 import CheckIcon from '@mui/icons-material/Check'
 import PeopleIcon from '@mui/icons-material/People'
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -175,6 +176,38 @@ export default function Friends() {
                       </Typography>
                     )}
                   </Box>
+
+                  {/* DM 버튼 */}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={async () => {
+                      const minId = Math.min(profile.id, user.id)
+                      const maxId = Math.max(profile.id, user.id)
+                      let { data: conv } = await supabase
+                        .from('sns_conversations')
+                        .select('id')
+                        .eq('user1_id', minId)
+                        .eq('user2_id', maxId)
+                        .maybeSingle()
+                      if (!conv) {
+                        const { data: created } = await supabase
+                          .from('sns_conversations')
+                          .insert({ user1_id: minId, user2_id: maxId })
+                          .select('id')
+                          .single()
+                        conv = created
+                      }
+                      if (conv) navigate(`/messages/${conv.id}`)
+                    }}
+                    sx={{
+                      flexShrink: 0, height: 32, minWidth: 'auto', px: 1.2,
+                      borderColor: '#2a475e', color: '#66c0f4',
+                      '&:hover': { borderColor: '#66c0f4', bgcolor: 'rgba(102,192,244,0.06)' },
+                    }}
+                  >
+                    <ChatBubbleOutlineIcon sx={{ fontSize: '0.9rem' }} />
+                  </Button>
 
                   {/* 팔로우 버튼 */}
                   <Button
