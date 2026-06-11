@@ -24,12 +24,18 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchProfile = async (authId) => {
+  const fetchProfile = async (authId, retry = 0) => {
     const { data } = await supabase
       .from('sns_users')
       .select('*')
       .eq('auth_id', authId)
       .single()
+
+    if (!data && retry < 3) {
+      // 트리거가 아직 실행 중일 수 있으므로 최대 3회 재시도
+      setTimeout(() => fetchProfile(authId, retry + 1), 600)
+      return
+    }
     setProfile(data || null)
     setLoading(false)
   }

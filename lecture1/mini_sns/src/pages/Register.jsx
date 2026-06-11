@@ -21,34 +21,38 @@ export default function Register() {
 
   const handleRegister = async () => {
     if (!form.username || !form.displayName) { setError('모든 항목을 입력해주세요.'); return }
-    if (!/^[a-z0-9_.]{3,20}$/.test(form.username)) {
-      setError('사용자명은 3~20자 영문 소문자, 숫자, ., _ 만 사용 가능합니다.')
+    if (form.username.length < 3 || form.username.length > 20) {
+      setError('사용자명은 3~20자여야 합니다.')
       return
     }
     setLoading(true)
     setError('')
 
-    // 1단계: Supabase Auth 회원가입
-    const { data: authData, error: signUpErr } = await supabase.auth.signUp({
+    // signUp 메타데이터에 username/display_name 포함
+    // → DB 트리거(handle_new_sns_user)가 자동으로 sns_users 프로필 생성
+    const { error: signUpErr } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
+      options: {
+        data: {
+          username: form.username,
+          display_name: form.displayName,
+        },
+      },
     })
-    if (signUpErr) { setError(signUpErr.message); setLoading(false); return }
 
-    // 2단계: sns_users 프로필 생성
-    const { error: profileErr } = await supabase.from('sns_users').insert({
-      auth_id: authData.user.id,
-      username: form.username,
-      email: form.email,
-      display_name: form.displayName,
-    })
-    if (profileErr) {
-      setError(profileErr.message.includes('username') ? '이미 사용 중인 사용자명입니다.' : profileErr.message)
+    if (signUpErr) {
+      if (signUpErr.message.includes('already registered') || signUpErr.message.includes('already been registered')) {
+        setError('이미 가입된 이메일입니다. 로그인 페이지로 이동해주세요.')
+      } else {
+        setError(signUpErr.message)
+      }
       setLoading(false)
       return
     }
 
-    navigate('/')
+    // 트리거가 sns_users를 생성할 시간을 잠깐 기다린 후 이동
+    setTimeout(() => navigate('/'), 500)
     setLoading(false)
   }
 
