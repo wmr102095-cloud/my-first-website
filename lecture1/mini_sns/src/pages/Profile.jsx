@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Box, AppBar, Toolbar, IconButton, Typography, Avatar, Grid, CircularProgress, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material'
+import { Box, IconButton, Typography, Avatar, CircularProgress, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Divider } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import SettingsIcon from '@mui/icons-material/Settings'
 import GridOnIcon from '@mui/icons-material/GridOn'
+import EditIcon from '@mui/icons-material/Edit'
+import LogoutIcon from '@mui/icons-material/Logout'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -19,10 +20,7 @@ export default function Profile() {
 
   const isMe = myProfile && String(myProfile.id) === String(id)
 
-  useEffect(() => {
-    fetchUser()
-    fetchPosts()
-  }, [id])
+  useEffect(() => { fetchUser(); fetchPosts() }, [id])
 
   const fetchUser = async () => {
     const { data } = await supabase.from('sns_users').select('*').eq('id', id).single()
@@ -41,10 +39,7 @@ export default function Profile() {
 
   const handleEdit = async () => {
     if (!editForm.display_name.trim()) return
-    await supabase.from('sns_users').update({
-      display_name: editForm.display_name,
-      bio: editForm.bio,
-    }).eq('id', myProfile.id)
+    await supabase.from('sns_users').update({ display_name: editForm.display_name, bio: editForm.bio }).eq('id', myProfile.id)
     setEditOpen(false)
     fetchUser()
     refreshProfile()
@@ -61,50 +56,47 @@ export default function Profile() {
   }
 
   if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <CircularProgress size={28} sx={{ color: '#0095f6' }} />
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#1b2838' }}>
+      <CircularProgress size={28} sx={{ color: '#66c0f4' }} />
     </Box>
   )
   if (!user) return null
 
   return (
-    <Box sx={{ bgcolor: '#fff', minHeight: '100vh', maxWidth: 600, mx: 'auto' }}>
-      <AppBar position="sticky" elevation={0} sx={{ bgcolor: '#fff', borderBottom: '1px solid #dbdbdb' }}>
-        <Toolbar sx={{ minHeight: 56 }}>
-          <IconButton edge="start" onClick={() => navigate(-1)} sx={{ color: '#262626' }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography fontWeight={700} fontSize="1rem" flex={1} textAlign="center">{user.username}</Typography>
-          {isMe && (
-            <IconButton edge="end" onClick={handleLogout} sx={{ color: '#262626' }}>
-              <SettingsIcon />
-            </IconButton>
-          )}
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ bgcolor: '#1b2838', minHeight: '100vh' }}>
+      {/* 헤더 */}
+      <Box sx={{ display: 'flex', alignItems: 'center', px: 1.5, py: 1, bgcolor: '#16202d', borderBottom: '1px solid #2a475e', position: 'sticky', top: 0, zIndex: 10 }}>
+        <IconButton onClick={() => navigate(-1)} sx={{ color: '#c6d4df' }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#c6d4df', flex: 1, ml: 0.5 }}>{user.username}</Typography>
+      </Box>
 
-      {/* 프로필 정보 */}
-      <Box sx={{ px: 3, pt: 3, pb: 2 }}>
+      {/* 프로필 영역 */}
+      <Box sx={{ px: 3, pt: 3, pb: 2, maxWidth: 640, mx: 'auto' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2.5 }}>
           <Avatar
             src={user.avatar_url}
-            sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: '#dbdbdb', color: '#8e8e8e' }}
+            sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: '#2a475e', border: '3px solid #3d6b8e', color: '#66c0f4' }}
           >
             {user.display_name?.[0]?.toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', gap: 3, mb: 1 }}>
               <Box sx={{ textAlign: 'center' }}>
-                <Typography fontWeight={700} fontSize="1rem">{posts.length}</Typography>
-                <Typography variant="caption" color="text.secondary">게시물</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#c6d4df' }}>{posts.length}</Typography>
+                <Typography sx={{ fontSize: '0.75rem', color: '#8fa4b9' }}>게시물</Typography>
               </Box>
             </Box>
           </Box>
         </Box>
 
-        <Typography fontWeight={700} fontSize="0.9rem">{user.display_name || user.username}</Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#c6d4df' }}>
+          {user.display_name || user.username}
+        </Typography>
+        <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mt: 0.3 }}>@{user.username}</Typography>
         {user.bio && (
-          <Typography fontSize="0.88rem" color="text.secondary" mt={0.5} sx={{ whiteSpace: 'pre-wrap' }}>
+          <Typography sx={{ fontSize: '0.88rem', color: '#a8cfe8', mt: 1, whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
             {user.bio}
           </Typography>
         )}
@@ -112,20 +104,18 @@ export default function Profile() {
         {isMe && (
           <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
             <Button
-              fullWidth
-              variant="outlined"
-              size="small"
+              fullWidth variant="outlined" size="small"
+              startIcon={<EditIcon sx={{ fontSize: '0.9rem' }} />}
               onClick={openEdit}
-              sx={{ borderColor: '#dbdbdb', color: '#262626', fontWeight: 600, borderRadius: 2, height: 32, fontSize: '0.82rem' }}
+              sx={{ borderColor: '#2a475e', color: '#c6d4df', fontWeight: 600, height: 34, fontSize: '0.82rem', '&:hover': { borderColor: '#66c0f4', bgcolor: '#2a475e' } }}
             >
               프로필 편집
             </Button>
             <Button
-              fullWidth
-              variant="outlined"
-              size="small"
+              fullWidth variant="outlined" size="small"
+              startIcon={<LogoutIcon sx={{ fontSize: '0.9rem' }} />}
               onClick={handleLogout}
-              sx={{ borderColor: '#dbdbdb', color: '#ed4956', fontWeight: 600, borderRadius: 2, height: 32, fontSize: '0.82rem' }}
+              sx={{ borderColor: '#2a475e', color: '#ef4444', fontWeight: 600, height: 34, fontSize: '0.82rem', '&:hover': { borderColor: '#ef4444', bgcolor: 'rgba(239,68,68,0.08)' } }}
             >
               로그아웃
             </Button>
@@ -133,67 +123,72 @@ export default function Profile() {
         )}
       </Box>
 
-      {/* 탭 구분선 */}
-      <Box sx={{ borderTop: '1px solid #dbdbdb', display: 'flex', justifyContent: 'center', py: 1.5, gap: 0.5, color: '#262626' }}>
-        <GridOnIcon sx={{ fontSize: '1.1rem' }} />
-        <Typography fontSize="0.8rem" fontWeight={700}>게시물</Typography>
+      {/* 게시물 탭 구분선 */}
+      <Divider sx={{ borderColor: '#2a475e' }} />
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 1.2, gap: 0.6, color: '#66c0f4', borderBottom: '2px solid #66c0f4', maxWidth: 640, mx: 'auto' }}>
+        <GridOnIcon sx={{ fontSize: '1rem' }} />
+        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#66c0f4' }}>게시물</Typography>
       </Box>
 
       {/* 포스트 그리드 */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px' }}>
-        {posts.map(post => (
-          <Box
-            key={post.id}
-            onClick={() => navigate(`/post/${post.id}`)}
-            sx={{ position: 'relative', paddingTop: '100%', cursor: 'pointer' }}
-          >
-            {post.image_url ? (
-              <Box
-                component="img"
-                src={post.image_url}
-                alt=""
-                sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <Box sx={{ position: 'absolute', inset: 0, bgcolor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography variant="caption" color="text.secondary">텍스트</Typography>
-              </Box>
-            )}
+      <Box sx={{ maxWidth: 640, mx: 'auto' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px' }}>
+          {posts.map((post) => (
+            <Box
+              key={post.id}
+              onClick={() => navigate(`/post/${post.id}`)}
+              sx={{ position: 'relative', paddingTop: '100%', cursor: 'pointer', '&:hover': { opacity: 0.85 } }}
+            >
+              {post.image_url ? (
+                <Box
+                  component="img" src={post.image_url} alt=""
+                  sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Box sx={{ position: 'absolute', inset: 0, bgcolor: '#16202d', border: '1px solid #2a475e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography sx={{ fontSize: '0.72rem', color: '#8fa4b9' }}>텍스트</Typography>
+                </Box>
+              )}
+            </Box>
+          ))}
+        </Box>
+
+        {posts.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography sx={{ color: '#8fa4b9', fontSize: '0.9rem' }}>아직 게시물이 없습니다.</Typography>
           </Box>
-        ))}
+        )}
       </Box>
 
-      {posts.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
-          <Typography color="text.secondary" fontSize="0.9rem">아직 게시물이 없습니다.</Typography>
-        </Box>
-      )}
-
       {/* 프로필 편집 다이얼로그 */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem' }}>프로필 편집</DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        fullWidth maxWidth="xs"
+        PaperProps={{ sx: { bgcolor: '#16202d', border: '1px solid #2a475e', borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem', color: '#c6d4df', borderBottom: '1px solid #2a475e' }}>
+          프로필 편집
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2.5 }}>
+          <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mb: 0.5 }}>표시 이름</Typography>
           <TextField
-            fullWidth
-            label="표시 이름"
-            size="small"
+            fullWidth size="small"
             value={editForm.display_name}
-            onChange={e => setEditForm(f => ({ ...f, display_name: e.target.value }))}
+            onChange={(e) => setEditForm((f) => ({ ...f, display_name: e.target.value }))}
             sx={{ mb: 2 }}
           />
+          <Typography sx={{ fontSize: '0.78rem', color: '#8fa4b9', mb: 0.5 }}>소개글</Typography>
           <TextField
-            fullWidth
-            label="소개글"
-            size="small"
-            multiline
-            rows={3}
+            fullWidth size="small" multiline rows={3}
             value={editForm.bio}
-            onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))}
+            onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+            inputProps={{ maxLength: 150 }}
           />
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEditOpen(false)} sx={{ color: 'text.secondary' }}>취소</Button>
-          <Button variant="contained" onClick={handleEdit} sx={{ bgcolor: '#0095f6' }}>저장</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5, borderTop: '1px solid #2a475e' }}>
+          <Button onClick={() => setEditOpen(false)} sx={{ color: '#8fa4b9' }}>취소</Button>
+          <Button variant="contained" color="primary" onClick={handleEdit}>저장</Button>
         </DialogActions>
       </Dialog>
     </Box>
