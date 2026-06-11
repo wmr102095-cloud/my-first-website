@@ -87,74 +87,123 @@ export default function PostDetail() {
   const author = post.sns_users
   const game = post.game_id ? getGameById(post.game_id) : null
 
+  // 게임 색상 기반 배경 tint
+  const accentHex = game?.accentColor || '#66c0f4'
+
   return (
-    <Box sx={{ bgcolor: '#1b2838', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{
+      minHeight: '100vh',
+      bgcolor: '#1b2838',
+      // 게임이 있으면 상단에 해당 게임 색상이 은은하게 물드는 배경
+      background: game
+        ? `linear-gradient(180deg, ${accentHex}18 0px, #1b2838 320px)`
+        : 'linear-gradient(180deg, #16202d 0px, #1b2838 280px)',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
       {/* 헤더 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', px: 1.5, py: 1, bgcolor: '#16202d', borderBottom: '1px solid #2a475e', position: 'sticky', top: 0, zIndex: 10 }}>
+      <Box sx={{
+        display: 'flex', alignItems: 'center',
+        px: 1.5, py: 1,
+        bgcolor: 'rgba(22,32,45,0.9)',
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid #2a475e',
+        position: 'sticky', top: 0, zIndex: 10,
+      }}>
         <IconButton onClick={() => navigate(-1)} sx={{ color: '#c6d4df' }}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#c6d4df', ml: 0.5 }}>게시물</Typography>
+        {/* 게임 이름 or 기본 타이틀 */}
+        {game ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 0.5 }}>
+            <SportsEsportsIcon sx={{ fontSize: '0.95rem', color: accentHex }} />
+            <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: accentHex }}>{game.title}</Typography>
+            <Typography sx={{ fontSize: '0.75rem', color: '#8fa4b9', ml: 0.3 }}>커뮤니티</Typography>
+          </Box>
+        ) : (
+          <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#c6d4df', ml: 0.5 }}>게시물</Typography>
+        )}
       </Box>
 
+      {/* 본문 */}
       <Box sx={{ flex: 1, maxWidth: 640, mx: 'auto', width: '100%', pb: 10 }}>
-        {/* 게임 뱃지 */}
-        {game && (
-          <Box
-            onClick={() => navigate(`/game/${game.id}`)}
-            sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'flex', alignItems: 'center', gap: 0.8, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
-          >
-            <SportsEsportsIcon sx={{ fontSize: '0.9rem', color: game.accentColor }} />
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: game.accentColor }}>{game.title}</Typography>
-          </Box>
-        )}
 
         {/* 작성자 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1.5, gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 1.8, gap: 1.5 }}>
           <Avatar
             src={author?.avatar_url}
             onClick={() => navigate(`/profile/${author?.id}`)}
-            sx={{ width: 36, height: 36, cursor: 'pointer', bgcolor: '#2a475e', border: '2px solid #3d6b8e' }}
+            sx={{ width: 38, height: 38, cursor: 'pointer', bgcolor: '#2a475e', border: `2px solid ${accentHex}60` }}
           >
             {author?.display_name?.[0]?.toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#c6d4df', cursor: 'pointer' }} onClick={() => navigate(`/profile/${author?.id}`)}>
+            <Typography
+              sx={{ fontWeight: 700, fontSize: '0.92rem', color: '#c6d4df', cursor: 'pointer', '&:hover': { color: accentHex } }}
+              onClick={() => navigate(`/profile/${author?.id}`)}
+            >
               {author?.username}
             </Typography>
-            <Typography sx={{ fontSize: '0.75rem', color: '#8fa4b9' }}>{timeAgo(post.created_at)}</Typography>
+            <Typography sx={{ fontSize: '0.74rem', color: '#8fa4b9' }}>{timeAgo(post.created_at)}</Typography>
           </Box>
         </Box>
 
         {/* 이미지 */}
         {post.image_url && (
-          <Box component="img" src={post.image_url} alt="post" sx={{ width: '100%', display: 'block', maxHeight: 520, objectFit: 'cover' }} />
-        )}
-
-        {/* 액션 */}
-        <Box sx={{ px: 1, pt: 0.5, display: 'flex', alignItems: 'center' }}>
-          <IconButton onClick={handleLike} size="small" sx={{ color: liked ? '#ed4956' : '#8fa4b9', '&:hover': { color: '#ed4956' } }}>
-            {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-          </IconButton>
-        </Box>
-
-        {likesCount > 0 && (
-          <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', px: 2, color: '#c6d4df' }}>
-            좋아요 {likesCount.toLocaleString()}개
-          </Typography>
-        )}
-
-        {post.caption && (
-          <Box sx={{ px: 2, py: 0.8 }}>
-            <Typography component="span" sx={{ fontWeight: 700, fontSize: '0.9rem', mr: 1, color: '#c6d4df' }}>{author?.username}</Typography>
-            <Typography component="span" sx={{ fontSize: '0.9rem', color: '#a8cfe8' }}>{post.caption}</Typography>
+          <Box sx={{ px: 2, mb: 0.5 }}>
+            <Box
+              component="img"
+              src={post.image_url}
+              alt="post"
+              sx={{
+                width: '100%',
+                display: 'block',
+                maxHeight: 500,
+                objectFit: 'cover',
+                borderRadius: 1.5,
+                border: `1px solid ${accentHex}30`,
+                boxShadow: `0 4px 24px ${accentHex}18`,
+              }}
+            />
           </Box>
         )}
 
-        <Divider sx={{ my: 1.5, borderColor: '#2a475e' }} />
+        {/* 액션 버튼 */}
+        <Box sx={{ px: 2, pt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <IconButton
+            onClick={handleLike}
+            size="small"
+            sx={{ color: liked ? '#ed4956' : '#8fa4b9', '&:hover': { color: '#ed4956' } }}
+          >
+            {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+          </IconButton>
+          {likesCount > 0 && (
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#c6d4df' }}>
+              {likesCount.toLocaleString()}
+            </Typography>
+          )}
+        </Box>
+
+        {/* 캡션 */}
+        {post.caption && (
+          <Box sx={{ px: 2.5, pb: 1.2 }}>
+            <Typography component="span" sx={{ fontWeight: 700, fontSize: '0.9rem', mr: 1, color: '#c6d4df' }}>
+              {author?.username}
+            </Typography>
+            <Typography component="span" sx={{ fontSize: '0.9rem', color: '#a8cfe8', lineHeight: 1.7 }}>
+              {post.caption}
+            </Typography>
+          </Box>
+        )}
+
+        <Divider sx={{ mx: 2, borderColor: '#2a475e' }} />
 
         {/* 댓글 목록 */}
-        <Box sx={{ px: 2, pb: 2 }}>
+        <Box sx={{ px: 2.5, pt: 1.5, pb: 2 }}>
+          <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#8fa4b9', mb: 1.5, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            댓글 {comments.length > 0 ? comments.length : ''}
+          </Typography>
+
           {comments.length === 0 ? (
             <Typography sx={{ color: '#8fa4b9', fontSize: '0.85rem', textAlign: 'center', py: 3 }}>
               첫 댓글을 남겨보세요
@@ -169,10 +218,12 @@ export default function PostDetail() {
                 >
                   {c.sns_users?.display_name?.[0]?.toUpperCase()}
                 </Avatar>
-                <Box>
-                  <Typography component="span" sx={{ fontWeight: 700, fontSize: '0.85rem', mr: 1, color: '#c6d4df' }}>{c.sns_users?.username}</Typography>
+                <Box sx={{ flex: 1, bgcolor: '#16202d', border: '1px solid #2a475e', borderRadius: 1.5, px: 1.5, py: 1 }}>
+                  <Typography component="span" sx={{ fontWeight: 700, fontSize: '0.82rem', mr: 1, color: '#c6d4df' }}>
+                    {c.sns_users?.username}
+                  </Typography>
                   <Typography component="span" sx={{ fontSize: '0.85rem', color: '#a8cfe8' }}>{c.content}</Typography>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#8fa4b9', mt: 0.3 }}>{timeAgo(c.created_at)}</Typography>
+                  <Typography sx={{ fontSize: '0.7rem', color: '#8fa4b9', mt: 0.3 }}>{timeAgo(c.created_at)}</Typography>
                 </Box>
               </Box>
             ))
@@ -184,11 +235,14 @@ export default function PostDetail() {
       {profile && (
         <Box sx={{
           position: 'fixed', bottom: 0, left: '220px', right: 0,
-          bgcolor: '#16202d', borderTop: '1px solid #2a475e',
-          px: 2, py: 1.2, display: 'flex', gap: 1.5, alignItems: 'center',
+          bgcolor: 'rgba(22,32,45,0.95)',
+          backdropFilter: 'blur(8px)',
+          borderTop: '1px solid #2a475e',
+          px: 2, py: 1.2,
+          display: 'flex', gap: 1.5, alignItems: 'center',
           zIndex: 50,
         }}>
-          <Avatar sx={{ width: 30, height: 30, flexShrink: 0, bgcolor: '#2a475e', fontSize: '0.8rem', border: '2px solid #3d6b8e' }}>
+          <Avatar sx={{ width: 30, height: 30, flexShrink: 0, bgcolor: '#2a475e', fontSize: '0.8rem', border: `2px solid ${accentHex}60` }}>
             {profile.display_name?.[0]?.toUpperCase()}
           </Avatar>
           <TextField
@@ -201,8 +255,9 @@ export default function PostDetail() {
             sx={{
               '& .MuiOutlinedInput-root': {
                 bgcolor: '#2a475e',
+                borderRadius: 2,
                 '& fieldset': { border: 'none' },
-                '& textarea': { color: '#c6d4df', fontSize: '0.88rem' },
+                '& textarea': { color: '#c6d4df', fontSize: '0.88rem', py: 0.8 },
                 '& textarea::placeholder': { color: '#8fa4b9' },
               },
             }}
@@ -211,9 +266,9 @@ export default function PostDetail() {
             size="small"
             onClick={handleComment}
             disabled={!newComment.trim() || posting}
-            sx={{ color: '#66c0f4', fontWeight: 700, minWidth: 'auto', flexShrink: 0, '&:disabled': { color: '#4c7b9a' } }}
+            sx={{ color: accentHex, fontWeight: 700, minWidth: 'auto', flexShrink: 0, '&:disabled': { color: '#4c7b9a' } }}
           >
-            {posting ? <CircularProgress size={16} sx={{ color: '#66c0f4' }} /> : '게시'}
+            {posting ? <CircularProgress size={16} sx={{ color: accentHex }} /> : '게시'}
           </Button>
         </Box>
       )}
