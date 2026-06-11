@@ -25,15 +25,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: |
-            lecture1/game_community/package-lock.json
-            lecture1/mini_sns/package-lock.json
 
       # ── game_community 빌드 ──────────────────────────────
       - name: Install game_community
         working-directory: lecture1/game_community
-        run: npm ci
+        run: npm install
 
       - name: Build game_community
         working-directory: lecture1/game_community
@@ -45,7 +41,7 @@ jobs:
       # ── mini_sns 빌드 ────────────────────────────────────
       - name: Install mini_sns
         working-directory: lecture1/mini_sns
-        run: npm ci
+        run: npm install
 
       - name: Build mini_sns
         working-directory: lecture1/mini_sns
