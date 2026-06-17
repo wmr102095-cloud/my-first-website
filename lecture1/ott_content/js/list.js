@@ -79,11 +79,19 @@ function renderDramaCarousel(dramas) {
   ).join('');
   section.appendChild(dotsWrap);
 
+  /* ── 각도 정규화 헬퍼 (-π ~ π) ── */
+  function norm(a) {
+    a = a % TAU;
+    if (a >  Math.PI) a -= TAU;
+    if (a < -Math.PI) a += TAU;
+    return a;
+  }
+
   /* ── 상태 ── */
-  const cards     = Array.from(scene.querySelectorAll('.drama-3d-card'));
-  const dots      = Array.from(dotsWrap.querySelectorAll('.drama-dot'));
-  let targetIdx   = 0;
-  let currentAngle = 0;
+  const cards      = Array.from(scene.querySelectorAll('.drama-3d-card'));
+  const dots       = Array.from(dotsWrap.querySelectorAll('.drama-dot'));
+  let targetIdx    = 0;
+  let currentAngle = 0;   // 항상 norm() 정규화 상태 유지
   let targetAngle  = 0;
   let hoveredIdx   = -1;
   let isDragging   = false;
@@ -91,13 +99,19 @@ function renderDramaCarousel(dramas) {
   let dragAngleStart = 0;
   let autoTimer;
 
-  /* ── 카드 이동 ── */
+  /* ── 카드 이동 (정규화 각도 기반) ── */
   function goTo(idx, withTimer = true) {
     targetIdx = ((idx % n) + n) % n;
-    const raw  = -targetIdx * angleStep;
-    let diff   = ((raw - currentAngle) % TAU + TAU) % TAU;
-    if (diff > Math.PI) diff -= TAU;
-    targetAngle = currentAngle + diff;
+
+    // 목표 각도 (정규화)
+    const exact = norm(-targetIdx * angleStep);
+    // 현재 각도도 정규화해서 최단 경로 계산
+    const curr  = norm(currentAngle);
+    let   diff  = norm(exact - curr);
+
+    // currentAngle 과 targetAngle 모두 정규화 기준으로 리셋 → 오차 누적 방지
+    currentAngle = curr;
+    targetAngle  = curr + diff;
 
     dots.forEach((d, i) => d.classList.toggle('active', i === targetIdx));
 
@@ -123,9 +137,9 @@ function renderDramaCarousel(dramas) {
 
   /* ── 드래그 (좌우 넘기기) ── */
   scene.addEventListener('pointerdown', (e) => {
-    isDragging   = false;
-    dragStartX   = e.clientX;
-    dragAngleStart = targetAngle;
+    isDragging     = false;
+    dragStartX     = e.clientX;
+    dragAngleStart = norm(currentAngle);   // 정규화 값 기준
     scene.setPointerCapture(e.pointerId);
     scene.classList.add('dragging');
     clearInterval(autoTimer);
@@ -136,22 +150,31 @@ function renderDramaCarousel(dramas) {
     const dx = e.clientX - dragStartX;
     if (Math.abs(dx) > 8) isDragging = true;
     if (isDragging) {
-      currentAngle = targetAngle = dragAngleStart + dx / (radius * 0.75);
+      currentAngle = targetAngle = dragAngleStart + dx / (radius * 0.7);
     }
   });
 
   scene.addEventListener('pointerup', () => {
     scene.classList.remove('dragging');
     if (isDragging) {
-      const snapIdx = Math.round(-targetAngle / angleStep);
-      goTo(-snapIdx);
+      // currentAngle 기준으로 가장 가까운 카드 스냅
+      const rawIdx  = -norm(currentAngle) / angleStep;
+      const snapIdx = Math.round(rawIdx);
+      goTo(((snapIdx % n) + n) % n);
     }
     setTimeout(() => { isDragging = false; }, 50);
   });
 
   /* ── rAF 애니메이션 루프 ── */
   function tick() {
-    currentAngle += (targetAngle - currentAngle) * 0.1;
+    const delta = targetAngle - currentAngle;
+
+    if (Math.abs(delta) < 0.003) {
+      // 목표에 충분히 가까우면 정확하게 스냅
+      currentAngle = targetAngle = norm(targetAngle);
+    } else {
+      currentAngle += delta * 0.13;
+    }
 
     cards.forEach((card, i) => {
       const a    = currentAngle + i * angleStep;
@@ -159,11 +182,11 @@ function renderDramaCarousel(dramas) {
       const cosA = Math.cos(a);
 
       const x   = sinA * radius;
-      let   scl = 0.5  + 0.5  * ((cosA + 1) / 2);  // 0.5 ~ 1.0
-      const opa = 0.22 + 0.78 * ((cosA + 1) / 2);  // 0.22 ~ 1.0
+      let   scl = 0.5  + 0.5  * ((cosA + 1) / 2);
+      const opa = 0.22 + 0.78 * ((cosA + 1) / 2);
       const zi  = Math.round((cosA + 1) * 50);
 
-      if (i === hoveredIdx) scl = Math.min(scl + 0.2, 1.2); // 호버 강조
+      if (i === hoveredIdx) scl = Math.min(scl + 0.2, 1.2);
 
       card.style.transform = `translateX(${x.toFixed(1)}px) scale(${scl.toFixed(3)})`;
       card.style.opacity   = opa.toFixed(3);
@@ -174,7 +197,7 @@ function renderDramaCarousel(dramas) {
   }
 
   tick();
-  goTo(0); // 첫 카드 → 15초마다 자동 전환
+  goTo(0);
 }
 
 async function fetchContents() {
