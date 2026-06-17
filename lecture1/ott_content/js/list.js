@@ -26,67 +26,144 @@ async function fetchDramas() {
 }
 
 function renderDramaCarousel(dramas) {
-  const scene = document.getElementById('drama-scene');
-  if (!dramas.length) {
-    scene.closest('.drama-section').style.display = 'none';
-    return;
-  }
+  const scene   = document.getElementById('drama-scene');
+  const wrap    = document.querySelector('.drama-carousel-3d-wrap');
+  const section = scene.closest('.drama-section');
+  if (!dramas.length) { section.style.display = 'none'; return; }
 
-  const n = dramas.length;
-  const angleStep = (2 * Math.PI) / n;
-  const radius = Math.max(260, Math.round((n * 185) / (2 * Math.PI)));
+  const n         = dramas.length;
+  const TAU       = 2 * Math.PI;
+  const angleStep = TAU / n;
+  const radius    = Math.max(260, Math.round((n * 185) / TAU));
 
+  /* ── 카드 생성 ── */
   scene.innerHTML = dramas.map((c, i) => {
-    const grad = GRADIENTS[i % GRADIENTS.length];
-    const initial = c.title.charAt(0);
-    const thumb = c.thumbnail_url
+    const grad   = GRADIENTS[i % GRADIENTS.length];
+    const thumb  = c.thumbnail_url
       ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
     const fallback = `<div class="drama-3d-card-fallback"
-        style="background:${grad};${c.thumbnail_url ? 'display:none' : ''}">${initial}</div>`;
-    const rating = c.rating > 0
-      ? `<div class="drama-3d-card-rating">⭐ ${Number(c.rating).toFixed(1)}</div>` : '';
+        style="background:${grad};${c.thumbnail_url ? 'display:none':''}">
+        ${esc(c.title.charAt(0))}</div>`;
+    const genreYear = [c.genre, c.release_year].filter(Boolean).join(' · ');
+    const ratingVal = c.rating > 0 ? Number(c.rating).toFixed(1) : '';
+    const descShort = c.description ? c.description.slice(0, 55) + (c.description.length > 55 ? '…' : '') : '';
 
     return `
-      <div class="drama-3d-card" data-id="${c.id}">
-        ${thumb}
-        ${fallback}
+      <div class="drama-3d-card" data-id="${c.id}" data-idx="${i}">
+        ${thumb}${fallback}
         <div class="drama-3d-card-overlay">
           <div class="drama-3d-card-title">${esc(c.title)}</div>
-          ${rating}
+          ${ratingVal ? `<div class="drama-3d-card-rating">⭐ ${ratingVal}</div>` : ''}
+        </div>
+        <div class="drama-3d-card-hover-detail">
+          <div class="hd-genre">${esc(genreYear)}</div>
+          <div class="hd-title">${esc(c.title)}</div>
+          ${ratingVal ? `<div class="hd-rating">⭐ ${ratingVal} / 10</div>` : ''}
+          ${descShort ? `<div class="hd-desc">${esc(descShort)}</div>` : ''}
         </div>
       </div>`;
   }).join('');
 
-  // 클릭 이벤트
-  scene.querySelectorAll('.drama-3d-card').forEach(card => {
+  /* ── 좌우 화살표 ── */
+  const leftBtn  = Object.assign(document.createElement('button'), { className: 'drama-nav drama-nav-left',  innerHTML: '&#8249;', type: 'button' });
+  const rightBtn = Object.assign(document.createElement('button'), { className: 'drama-nav drama-nav-right', innerHTML: '&#8250;', type: 'button' });
+  wrap.append(leftBtn, rightBtn);
+
+  /* ── 도트 인디케이터 ── */
+  const dotsWrap = document.createElement('div');
+  dotsWrap.className = 'drama-dots';
+  dotsWrap.innerHTML = dramas.map((_, i) =>
+    `<button class="drama-dot${i === 0 ? ' active' : ''}" data-dot="${i}" type="button"></button>`
+  ).join('');
+  section.appendChild(dotsWrap);
+
+  /* ── 상태 ── */
+  const cards     = Array.from(scene.querySelectorAll('.drama-3d-card'));
+  const dots      = Array.from(dotsWrap.querySelectorAll('.drama-dot'));
+  let targetIdx   = 0;
+  let currentAngle = 0;
+  let targetAngle  = 0;
+  let hoveredIdx   = -1;
+  let isDragging   = false;
+  let dragStartX   = 0;
+  let dragAngleStart = 0;
+  let autoTimer;
+
+  /* ── 카드 이동 ── */
+  function goTo(idx, withTimer = true) {
+    targetIdx = ((idx % n) + n) % n;
+    const raw  = -targetIdx * angleStep;
+    let diff   = ((raw - currentAngle) % TAU + TAU) % TAU;
+    if (diff > Math.PI) diff -= TAU;
+    targetAngle = currentAngle + diff;
+
+    dots.forEach((d, i) => d.classList.toggle('active', i === targetIdx));
+
+    if (withTimer) {
+      clearInterval(autoTimer);
+      autoTimer = setInterval(() => goTo(targetIdx + 1), 15000);
+    }
+  }
+
+  /* ── 버튼 / 도트 이벤트 ── */
+  leftBtn.addEventListener('click',  (e) => { e.stopPropagation(); goTo(targetIdx - 1); });
+  rightBtn.addEventListener('click', (e) => { e.stopPropagation(); goTo(targetIdx + 1); });
+  dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.dot)));
+
+  /* ── 카드 클릭 / 호버 ── */
+  cards.forEach((card, i) => {
     card.addEventListener('click', () => {
-      location.href = `detail.html?id=${card.dataset.id}`;
+      if (!isDragging) location.href = `detail.html?id=${card.dataset.id}`;
     });
+    card.addEventListener('mouseenter', () => { hoveredIdx = i; card.classList.add('is-hovered'); });
+    card.addEventListener('mouseleave', () => { hoveredIdx = -1; card.classList.remove('is-hovered'); });
   });
 
-  // ── JS rAF 애니메이션 (CSS 3D 미사용 → 모든 브라우저 호환) ──
-  const cards = Array.from(scene.querySelectorAll('.drama-3d-card'));
-  let angle = 0;
-  let paused = false;
+  /* ── 드래그 (좌우 넘기기) ── */
+  scene.addEventListener('pointerdown', (e) => {
+    isDragging   = false;
+    dragStartX   = e.clientX;
+    dragAngleStart = targetAngle;
+    scene.setPointerCapture(e.pointerId);
+    scene.classList.add('dragging');
+    clearInterval(autoTimer);
+  });
 
-  // 호버 시 일시정지
-  scene.addEventListener('mouseenter', () => { paused = true; });
-  scene.addEventListener('mouseleave', () => { paused = false; });
+  scene.addEventListener('pointermove', (e) => {
+    if (e.buttons === 0) return;
+    const dx = e.clientX - dragStartX;
+    if (Math.abs(dx) > 8) isDragging = true;
+    if (isDragging) {
+      currentAngle = targetAngle = dragAngleStart + dx / (radius * 0.75);
+    }
+  });
 
+  scene.addEventListener('pointerup', () => {
+    scene.classList.remove('dragging');
+    if (isDragging) {
+      const snapIdx = Math.round(-targetAngle / angleStep);
+      goTo(-snapIdx);
+    }
+    setTimeout(() => { isDragging = false; }, 50);
+  });
+
+  /* ── rAF 애니메이션 루프 ── */
   function tick() {
-    if (!paused) angle += 0.004; // ≈ 0.23°/프레임 → 약 26초에 1바퀴
+    currentAngle += (targetAngle - currentAngle) * 0.1;
 
     cards.forEach((card, i) => {
-      const a = angle + i * angleStep;
+      const a    = currentAngle + i * angleStep;
       const sinA = Math.sin(a);
-      const cosA = Math.cos(a); // -1(뒤) ~ 1(앞)
+      const cosA = Math.cos(a);
 
       const x   = sinA * radius;
-      const scl = 0.5 + 0.5 * ((cosA + 1) / 2);   // 0.5(뒤) ~ 1.0(앞)
-      const opa = 0.25 + 0.75 * ((cosA + 1) / 2);  // 0.25(뒤) ~ 1.0(앞)
-      const zi  = Math.round((cosA + 1) * 50);      // 0(뒤) ~ 100(앞)
+      let   scl = 0.5  + 0.5  * ((cosA + 1) / 2);  // 0.5 ~ 1.0
+      const opa = 0.22 + 0.78 * ((cosA + 1) / 2);  // 0.22 ~ 1.0
+      const zi  = Math.round((cosA + 1) * 50);
+
+      if (i === hoveredIdx) scl = Math.min(scl + 0.2, 1.2); // 호버 강조
 
       card.style.transform = `translateX(${x.toFixed(1)}px) scale(${scl.toFixed(3)})`;
       card.style.opacity   = opa.toFixed(3);
@@ -97,6 +174,7 @@ function renderDramaCarousel(dramas) {
   }
 
   tick();
+  goTo(0); // 첫 카드 → 15초마다 자동 전환
 }
 
 async function fetchContents() {
