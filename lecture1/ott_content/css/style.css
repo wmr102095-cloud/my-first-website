@@ -124,6 +124,109 @@ body {
 .hero h1 span { color: var(--primary); }
 .hero p { color: var(--text-muted); font-size: 1rem; }
 
+/* ── Drama Carousel ── */
+.drama-section {
+  margin-bottom: 40px;
+}
+
+.drama-carousel-wrap {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.drama-track {
+  width: 100%;
+  overflow: hidden;
+}
+
+.drama-track-inner {
+  display: flex;
+  gap: 28px;
+  width: max-content;
+  animation: drama-scroll 32s linear infinite;
+  padding: 16px 0 20px;
+}
+
+.drama-track-inner:hover {
+  animation-play-state: paused;
+}
+
+@keyframes drama-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.drama-circle-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.drama-circle-card:hover {
+  transform: translateY(-6px);
+}
+
+.drama-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+  box-shadow: 0 0 0 3px var(--border);
+  transition: box-shadow 0.25s ease;
+  flex-shrink: 0;
+}
+
+.drama-circle-card:hover .drama-circle {
+  box-shadow: 0 0 0 3px var(--primary), 0 8px 24px rgba(229,9,20,0.35);
+}
+
+.drama-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.drama-circle-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.drama-circle-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.25s ease;
+}
+
+.drama-circle-card:hover .drama-circle-label {
+  color: var(--text);
+}
+
+.drama-rating-dot {
+  font-size: 0.72rem;
+  color: #f5c518;
+}
+
 /* ── Filter Bar ── */
 .filter-bar {
   display: flex;
