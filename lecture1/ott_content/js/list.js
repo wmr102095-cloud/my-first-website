@@ -189,18 +189,21 @@ function renderDramaCarousel(dramas) {
     card.addEventListener('mouseleave', () => { hoveredIdx = -1; card.classList.remove('is-hovered'); });
   });
 
-  /* ── 드래그 (좌우 넘기기) ── */
+  /* ── 드래그 (좌우 넘기기) — window 레벨로 pointermove 처리 ── */
+  let pointerDown = false;
+
   scene.addEventListener('pointerdown', (e) => {
+    pointerDown    = true;
     isDragging     = false;
     dragStartX     = e.clientX;
-    dragAngleStart = currentAngle;  // 현재 위치 기준 그대로 사용
-    scene.setPointerCapture(e.pointerId);
+    dragAngleStart = currentAngle;
     scene.classList.add('dragging');
     clearInterval(autoTimer);
+    e.preventDefault();
   });
 
-  scene.addEventListener('pointermove', (e) => {
-    if (e.buttons === 0) return;
+  window.addEventListener('pointermove', (e) => {
+    if (!pointerDown) return;
     const dx = e.clientX - dragStartX;
     if (Math.abs(dx) > 8) isDragging = true;
     if (isDragging) {
@@ -208,14 +211,15 @@ function renderDramaCarousel(dramas) {
     }
   });
 
-  scene.addEventListener('pointerup', () => {
+  window.addEventListener('pointerup', () => {
+    if (!pointerDown) return;
+    pointerDown = false;
     scene.classList.remove('dragging');
     if (isDragging) {
-      // 현재 각도에서 가장 가까운 카드 인덱스로 스냅
       const snapIdx = ((Math.round(-currentAngle / angleStep) % n) + n) % n;
       goTo(snapIdx);
     }
-    setTimeout(() => { isDragging = false; }, 50);
+    setTimeout(() => { isDragging = false; }, 0);
   });
 
   /* ── rAF 애니메이션 루프 ── */
