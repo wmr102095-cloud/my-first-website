@@ -254,6 +254,23 @@ body {
   overflow: hidden;
 }
 
+/* ── 순위 배지 ── */
+.drama-rank-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
 /* ── Filter Bar ── */
 .filter-bar {
   display: flex;
@@ -740,4 +757,215 @@ select option { background: var(--bg-elevated); }
   .hero h1 { font-size: 1.5rem; }
   .content-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .logo { font-size: 1.3rem; }
+  .drama-popup-modal { max-width: 100%; }
+  .popup-poster-wrap { height: 220px; }
+}
+
+/* ═══════════════════════════════════════
+   드라마 상세 팝업 (모달)
+═══════════════════════════════════════ */
+.drama-popup-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.drama-popup-overlay.open {
+  display: flex;
+}
+
+/* 모달 박스 */
+.drama-popup-modal {
+  position: relative;
+  background: #1c1c1c;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
+  animation: popup-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.drama-popup-modal::-webkit-scrollbar { width: 4px; }
+.drama-popup-modal::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+@keyframes popup-slide-in {
+  from { opacity: 0; transform: scale(0.9) translateY(24px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);    }
+}
+
+/* 닫기 버튼 */
+.popup-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  backdrop-filter: blur(4px);
+}
+.popup-close-btn:hover { background: var(--primary); }
+
+/* ── 포스터 영역 (상단 ~35%) ── */
+.popup-poster-wrap {
+  position: relative;
+  width: 100%;
+  height: 270px;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.popup-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.popup-poster-fallback {
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 90px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+/* 포스터 하단 그라데이션 */
+.popup-poster-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, #1c1c1c);
+  pointer-events: none;
+}
+/* 포스터 위 순위 배지 */
+.popup-rank-badge {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 4px 11px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+/* ── 팝업 본문 ── */
+.popup-body {
+  padding: 18px 22px 28px;
+}
+
+/* 태그 행 */
+.popup-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.popup-tag-type {
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+.popup-tag-genre,
+.popup-tag-year {
+  background: #333;
+  color: #bbb;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+.popup-tag-rating {
+  color: #f5c518;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* 제목 */
+.popup-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 16px;
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+}
+
+/* 정보 섹션 */
+.popup-section {
+  margin-bottom: 14px;
+}
+.popup-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 5px;
+}
+.popup-desc {
+  font-size: 14px;
+  color: #ccc;
+  line-height: 1.65;
+  margin: 0;
+}
+.popup-value {
+  font-size: 14px;
+  color: #e0e0e0;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 시청하기 버튼 */
+.popup-watch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px 0;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+  transition: background 0.2s, transform 0.15s;
+}
+.popup-watch-btn:hover {
+  background: #ff1a28;
+  transform: translateY(-1px);
 }

@@ -65,6 +65,49 @@
     </div>
   </main>
 
+  <!-- 드라마 상세 팝업 -->
+  <div id="drama-popup-overlay" class="drama-popup-overlay">
+    <div class="drama-popup-modal" role="dialog" aria-modal="true">
+      <button class="popup-close-btn" id="popup-close-btn" aria-label="닫기">✕</button>
+
+      <!-- 상단 1/3 : 포스터 -->
+      <div class="popup-poster-wrap">
+        <img id="popup-poster-img" src="" alt="" class="popup-poster-img">
+        <div id="popup-poster-fb" class="popup-poster-fallback"></div>
+        <div class="popup-poster-gradient"></div>
+        <span id="popup-rank-badge" class="popup-rank-badge"></span>
+      </div>
+
+      <!-- 하단 2/3 : 정보 -->
+      <div class="popup-body">
+        <div class="popup-tags">
+          <span id="popup-type"   class="popup-tag-type"></span>
+          <span id="popup-genre"  class="popup-tag-genre"></span>
+          <span id="popup-year"   class="popup-tag-year"></span>
+          <span id="popup-rating" class="popup-tag-rating"></span>
+        </div>
+        <h2 id="popup-title" class="popup-title"></h2>
+
+        <div class="popup-section">
+          <span class="popup-label">줄거리</span>
+          <p id="popup-desc" class="popup-desc"></p>
+        </div>
+        <div class="popup-section">
+          <span class="popup-label">감독</span>
+          <p id="popup-director" class="popup-value"></p>
+        </div>
+        <div class="popup-section">
+          <span class="popup-label">출연배우</span>
+          <p id="popup-cast" class="popup-value"></p>
+        </div>
+
+        <a id="popup-watch-btn" class="popup-watch-btn" href="#" target="_blank" rel="noopener">
+          ▶ 시청하기
+        </a>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/list.js"></script>

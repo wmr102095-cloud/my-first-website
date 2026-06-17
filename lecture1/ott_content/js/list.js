@@ -38,8 +38,9 @@ function renderDramaCarousel(dramas) {
 
   /* ── 카드 생성 ── */
   scene.innerHTML = dramas.map((c, i) => {
-    const grad   = GRADIENTS[i % GRADIENTS.length];
-    const thumb  = c.thumbnail_url
+    const rank    = i + 1;
+    const grad    = GRADIENTS[i % GRADIENTS.length];
+    const thumb   = c.thumbnail_url
       ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
@@ -51,7 +52,8 @@ function renderDramaCarousel(dramas) {
     const descShort = c.description ? c.description.slice(0, 55) + (c.description.length > 55 ? '…' : '') : '';
 
     return `
-      <div class="drama-3d-card" data-id="${c.id}" data-idx="${i}">
+      <div class="drama-3d-card" data-id="${c.id}" data-idx="${i}" data-rank="${rank}">
+        <span class="drama-rank-badge">${rank}위</span>
         ${thumb}${fallback}
         <div class="drama-3d-card-overlay">
           <div class="drama-3d-card-title">${esc(c.title)}</div>
@@ -116,10 +118,72 @@ function renderDramaCarousel(dramas) {
   rightBtn.addEventListener('click', (e) => { e.stopPropagation(); goTo(targetIdx + 1); });
   dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.dot)));
 
+  /* ── 팝업 열기 ── */
+  function openPopup(drama, rank) {
+    const overlay  = document.getElementById('drama-popup-overlay');
+    const img      = document.getElementById('popup-poster-img');
+    const fb       = document.getElementById('popup-poster-fb');
+    const grad     = GRADIENTS[(rank - 1) % GRADIENTS.length];
+
+    // 포스터 이미지
+    if (drama.thumbnail_url) {
+      img.src = esc(drama.thumbnail_url);
+      img.style.display = 'block';
+      fb.style.display  = 'none';
+      img.onerror = () => {
+        img.style.display = 'none';
+        fb.style.display  = 'flex';
+        fb.style.background = grad;
+        fb.textContent = drama.title.charAt(0);
+      };
+    } else {
+      img.style.display = 'none';
+      fb.style.display  = 'flex';
+      fb.style.background = grad;
+      fb.textContent = drama.title.charAt(0);
+    }
+
+    // 순위 배지
+    document.getElementById('popup-rank-badge').textContent = `${rank}위`;
+
+    // 태그
+    document.getElementById('popup-type').textContent   = drama.content_type || '드라마';
+    document.getElementById('popup-genre').textContent  = drama.genre  || '';
+    document.getElementById('popup-year').textContent   = drama.release_year || '';
+    const rStr = drama.rating > 0 ? `⭐ ${Number(drama.rating).toFixed(1)}` : '';
+    document.getElementById('popup-rating').textContent = rStr;
+
+    // 제목 / 줄거리 / 감독 / 출연
+    document.getElementById('popup-title').textContent    = drama.title;
+    document.getElementById('popup-desc').textContent     = drama.description    || '줄거리 정보가 없습니다.';
+    document.getElementById('popup-director').textContent = drama.director       || '정보 없음';
+    document.getElementById('popup-cast').textContent     = drama.cast_members   || '정보 없음';
+
+    // 시청하기 버튼
+    const watchBtn = document.getElementById('popup-watch-btn');
+    watchBtn.href = drama.watch_url || '#';
+    if (!drama.watch_url) watchBtn.target = '_self';
+
+    // 표시
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  /* ── 팝업 닫기 ── */
+  function closePopup() {
+    document.getElementById('drama-popup-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('popup-close-btn').addEventListener('click', closePopup);
+  document.getElementById('drama-popup-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closePopup();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
+
   /* ── 카드 클릭 / 호버 ── */
   cards.forEach((card, i) => {
     card.addEventListener('click', () => {
-      if (!isDragging) location.href = `detail.html?id=${card.dataset.id}`;
+      if (!isDragging) openPopup(dramas[i], i + 1);
     });
     card.addEventListener('mouseenter', () => { hoveredIdx = i; card.classList.add('is-hovered'); });
     card.addEventListener('mouseleave', () => { hoveredIdx = -1; card.classList.remove('is-hovered'); });
