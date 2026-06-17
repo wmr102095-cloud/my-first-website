@@ -124,13 +124,12 @@ body {
 .hero h1 span { color: var(--primary); }
 .hero p { color: var(--text-muted); font-size: 1rem; }
 
-/* ── Drama 3D Carousel ── */
+/* ── Drama 3D Carousel (JS rAF 기반 — Chrome 완전 호환) ── */
 .drama-section {
   margin-bottom: 40px;
 }
 
 .drama-carousel-3d-wrap {
-  perspective: 1000px;
   height: 290px;
   position: relative;
   overflow: hidden;
@@ -142,17 +141,7 @@ body {
   top: 50%;
   width: 0;
   height: 0;
-  transform-style: preserve-3d;
-  animation: spin-drama 30s linear infinite;
-}
-
-.drama-scene:hover {
-  animation-play-state: paused;
-}
-
-@keyframes spin-drama {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(-360deg); }
+  /* transform-style/animation 제거 — JS rAF가 담당 */
 }
 
 .drama-3d-card {
@@ -165,9 +154,8 @@ body {
   overflow: hidden;
   cursor: pointer;
   border: 2px solid var(--border);
-  transition: border-color 0.3s;
-  backface-visibility: hidden;
   background: var(--bg-card);
+  /* JS가 transform / opacity / z-index 직접 제어 */
 }
 
 .drama-3d-card:hover {

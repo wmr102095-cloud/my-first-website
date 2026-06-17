@@ -33,15 +33,12 @@ function renderDramaCarousel(dramas) {
   }
 
   const n = dramas.length;
-  const angleStep = 360 / n;
-  // 카드 10개 기준 약 300px 반지름 (카드 사이 40px 간격)
-  const radius = Math.round((n * 180) / (2 * Math.PI));
+  const angleStep = (2 * Math.PI) / n;
+  const radius = Math.max(260, Math.round((n * 185) / (2 * Math.PI)));
 
   scene.innerHTML = dramas.map((c, i) => {
-    const angle = angleStep * i;
     const grad = GRADIENTS[i % GRADIENTS.length];
     const initial = c.title.charAt(0);
-
     const thumb = c.thumbnail_url
       ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
@@ -52,9 +49,7 @@ function renderDramaCarousel(dramas) {
       ? `<div class="drama-3d-card-rating">⭐ ${Number(c.rating).toFixed(1)}</div>` : '';
 
     return `
-      <div class="drama-3d-card"
-           style="transform: rotateY(${angle}deg) translateZ(${radius}px)"
-           onclick="location.href='detail.html?id=${c.id}'">
+      <div class="drama-3d-card" data-id="${c.id}">
         ${thumb}
         ${fallback}
         <div class="drama-3d-card-overlay">
@@ -63,6 +58,45 @@ function renderDramaCarousel(dramas) {
         </div>
       </div>`;
   }).join('');
+
+  // 클릭 이벤트
+  scene.querySelectorAll('.drama-3d-card').forEach(card => {
+    card.addEventListener('click', () => {
+      location.href = `detail.html?id=${card.dataset.id}`;
+    });
+  });
+
+  // ── JS rAF 애니메이션 (CSS 3D 미사용 → 모든 브라우저 호환) ──
+  const cards = Array.from(scene.querySelectorAll('.drama-3d-card'));
+  let angle = 0;
+  let paused = false;
+
+  // 호버 시 일시정지
+  scene.addEventListener('mouseenter', () => { paused = true; });
+  scene.addEventListener('mouseleave', () => { paused = false; });
+
+  function tick() {
+    if (!paused) angle += 0.004; // ≈ 0.23°/프레임 → 약 26초에 1바퀴
+
+    cards.forEach((card, i) => {
+      const a = angle + i * angleStep;
+      const sinA = Math.sin(a);
+      const cosA = Math.cos(a); // -1(뒤) ~ 1(앞)
+
+      const x   = sinA * radius;
+      const scl = 0.5 + 0.5 * ((cosA + 1) / 2);   // 0.5(뒤) ~ 1.0(앞)
+      const opa = 0.25 + 0.75 * ((cosA + 1) / 2);  // 0.25(뒤) ~ 1.0(앞)
+      const zi  = Math.round((cosA + 1) * 50);      // 0(뒤) ~ 100(앞)
+
+      card.style.transform = `translateX(${x.toFixed(1)}px) scale(${scl.toFixed(3)})`;
+      card.style.opacity   = opa.toFixed(3);
+      card.style.zIndex    = zi;
+    });
+
+    requestAnimationFrame(tick);
+  }
+
+  tick();
 }
 
 async function fetchContents() {
