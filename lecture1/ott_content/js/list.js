@@ -79,19 +79,11 @@ function renderDramaCarousel(dramas) {
   ).join('');
   section.appendChild(dotsWrap);
 
-  /* ── 각도 정규화 헬퍼 (-π ~ π) ── */
-  function norm(a) {
-    a = a % TAU;
-    if (a >  Math.PI) a -= TAU;
-    if (a < -Math.PI) a += TAU;
-    return a;
-  }
-
   /* ── 상태 ── */
   const cards      = Array.from(scene.querySelectorAll('.drama-3d-card'));
   const dots       = Array.from(dotsWrap.querySelectorAll('.drama-dot'));
   let targetIdx    = 0;
-  let currentAngle = 0;   // 항상 norm() 정규화 상태 유지
+  let currentAngle = 0;  // 언바운드(무한 누적) — 정규화 없이 연속값 유지
   let targetAngle  = 0;
   let hoveredIdx   = -1;
   let isDragging   = false;
@@ -99,19 +91,17 @@ function renderDramaCarousel(dramas) {
   let dragAngleStart = 0;
   let autoTimer;
 
-  /* ── 카드 이동 (정규화 각도 기반) ── */
+  /* ── 카드 이동 (업계 표준: 언바운드 각도 + 최단 경로) ── */
   function goTo(idx, withTimer = true) {
     targetIdx = ((idx % n) + n) % n;
 
-    // 목표 각도 (정규화)
-    const exact = norm(-targetIdx * angleStep);
-    // 현재 각도도 정규화해서 최단 경로 계산
-    const curr  = norm(currentAngle);
-    let   diff  = norm(exact - curr);
+    // 카드 i의 정확한 각도값
+    const exactAngle = -targetIdx * angleStep;
 
-    // currentAngle 과 targetAngle 모두 정규화 기준으로 리셋 → 오차 누적 방지
-    currentAngle = curr;
-    targetAngle  = curr + diff;
+    // currentAngle 기준으로 가장 가까운 동치 각도 계산
+    // → 오른쪽/왼쪽 방향을 항상 최단 경로로 선택
+    const offset = Math.round((currentAngle - exactAngle) / TAU);
+    targetAngle  = exactAngle + offset * TAU;
 
     dots.forEach((d, i) => d.classList.toggle('active', i === targetIdx));
 
@@ -139,7 +129,7 @@ function renderDramaCarousel(dramas) {
   scene.addEventListener('pointerdown', (e) => {
     isDragging     = false;
     dragStartX     = e.clientX;
-    dragAngleStart = norm(currentAngle);   // 정규화 값 기준
+    dragAngleStart = currentAngle;  // 현재 위치 기준 그대로 사용
     scene.setPointerCapture(e.pointerId);
     scene.classList.add('dragging');
     clearInterval(autoTimer);
@@ -157,10 +147,9 @@ function renderDramaCarousel(dramas) {
   scene.addEventListener('pointerup', () => {
     scene.classList.remove('dragging');
     if (isDragging) {
-      // currentAngle 기준으로 가장 가까운 카드 스냅
-      const rawIdx  = -norm(currentAngle) / angleStep;
-      const snapIdx = Math.round(rawIdx);
-      goTo(((snapIdx % n) + n) % n);
+      // 현재 각도에서 가장 가까운 카드 인덱스로 스냅
+      const snapIdx = ((Math.round(-currentAngle / angleStep) % n) + n) % n;
+      goTo(snapIdx);
     }
     setTimeout(() => { isDragging = false; }, 50);
   });
@@ -169,11 +158,10 @@ function renderDramaCarousel(dramas) {
   function tick() {
     const delta = targetAngle - currentAngle;
 
-    if (Math.abs(delta) < 0.003) {
-      // 목표에 충분히 가까우면 정확하게 스냅
-      currentAngle = targetAngle = norm(targetAngle);
+    if (Math.abs(delta) < 0.002) {
+      currentAngle = targetAngle; // 정확한 스냅
     } else {
-      currentAngle += delta * 0.13;
+      currentAngle += delta * 0.14;
     }
 
     cards.forEach((card, i) => {
