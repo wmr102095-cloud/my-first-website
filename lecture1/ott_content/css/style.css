@@ -124,107 +124,97 @@ body {
 .hero h1 span { color: var(--primary); }
 .hero p { color: var(--text-muted); font-size: 1rem; }
 
-/* ── Drama Carousel ── */
+/* ── Drama 3D Carousel ── */
 .drama-section {
   margin-bottom: 40px;
 }
 
-.drama-carousel-wrap {
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-}
-
-.drama-track {
-  width: 100%;
+.drama-carousel-3d-wrap {
+  perspective: 1000px;
+  height: 290px;
+  position: relative;
   overflow: hidden;
 }
 
-.drama-track-inner {
-  display: flex;
-  gap: 28px;
-  width: max-content;
-  animation: drama-scroll 32s linear infinite;
-  padding: 16px 0 20px;
+.drama-scene {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  animation: spin-drama 30s linear infinite;
 }
 
-.drama-track-inner:hover {
+.drama-scene:hover {
   animation-play-state: paused;
 }
 
-@keyframes drama-scroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+@keyframes spin-drama {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-360deg); }
 }
 
-.drama-circle-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: transform 0.25s ease;
-}
-
-.drama-circle-card:hover {
-  transform: translateY(-6px);
-}
-
-.drama-circle {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
+.drama-3d-card {
+  position: absolute;
+  width: 140px;
+  height: 210px;
+  left: -70px;
+  top: -105px;
+  border-radius: var(--radius);
   overflow: hidden;
-  border: 3px solid transparent;
-  background-clip: padding-box;
-  position: relative;
-  box-shadow: 0 0 0 3px var(--border);
-  transition: box-shadow 0.25s ease;
-  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  transition: border-color 0.3s;
+  backface-visibility: hidden;
+  background: var(--bg-card);
 }
 
-.drama-circle-card:hover .drama-circle {
-  box-shadow: 0 0 0 3px var(--primary), 0 8px 24px rgba(229,9,20,0.35);
+.drama-3d-card:hover {
+  border-color: var(--primary);
 }
 
-.drama-circle img {
+.drama-3d-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top;
+  display: block;
 }
 
-.drama-circle-fallback {
+.drama-3d-card-fallback {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 3rem;
   font-weight: 700;
   color: #fff;
 }
 
-.drama-circle-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-align: center;
-  max-width: 110px;
+.drama-3d-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px 10px 10px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.88));
+}
+
+.drama-3d-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color 0.25s ease;
 }
 
-.drama-circle-card:hover .drama-circle-label {
-  color: var(--text);
-}
-
-.drama-rating-dot {
-  font-size: 0.72rem;
+.drama-3d-card-rating {
+  font-size: 0.7rem;
   color: #f5c518;
+  margin-top: 2px;
 }
 
 /* ── Filter Bar ── */

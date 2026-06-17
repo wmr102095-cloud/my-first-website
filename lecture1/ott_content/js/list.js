@@ -2,7 +2,6 @@ let allContents = [];
 let activeType = '전체';
 let activeGenre = '전체';
 
-// 드라마 원형 캐러셀용 그라디언트 팔레트
 const GRADIENTS = [
   'linear-gradient(135deg,#E50914,#8b0000)',
   'linear-gradient(135deg,#1a1aff,#6a0dad)',
@@ -27,39 +26,43 @@ async function fetchDramas() {
 }
 
 function renderDramaCarousel(dramas) {
-  const inner = document.getElementById('drama-track-inner');
+  const scene = document.getElementById('drama-scene');
   if (!dramas.length) {
-    inner.parentElement.parentElement.style.display = 'none';
+    scene.closest('.drama-section').style.display = 'none';
     return;
   }
 
-  // 무한 루프를 위해 아이템 2배 복제
-  const doubled = [...dramas, ...dramas];
+  const n = dramas.length;
+  const angleStep = 360 / n;
+  // 카드 10개 기준 약 300px 반지름 (카드 사이 40px 간격)
+  const radius = Math.round((n * 180) / (2 * Math.PI));
 
-  inner.innerHTML = doubled.map((c, i) => {
+  scene.innerHTML = dramas.map((c, i) => {
+    const angle = angleStep * i;
     const grad = GRADIENTS[i % GRADIENTS.length];
     const initial = c.title.charAt(0);
+
     const thumb = c.thumbnail_url
       ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
-    const fallback = `<div class="drama-circle-fallback" style="background:${grad};${c.thumbnail_url ? 'display:none' : ''}">${initial}</div>`;
-    const rating = c.rating > 0 ? `<span class="drama-rating-dot">⭐ ${Number(c.rating).toFixed(1)}</span>` : '';
+    const fallback = `<div class="drama-3d-card-fallback"
+        style="background:${grad};${c.thumbnail_url ? 'display:none' : ''}">${initial}</div>`;
+    const rating = c.rating > 0
+      ? `<div class="drama-3d-card-rating">⭐ ${Number(c.rating).toFixed(1)}</div>` : '';
 
     return `
-      <div class="drama-circle-card" onclick="location.href='detail.html?id=${c.id}'" title="${esc(c.title)}">
-        <div class="drama-circle" style="background:${grad}">
-          ${thumb}
-          ${fallback}
+      <div class="drama-3d-card"
+           style="transform: rotateY(${angle}deg) translateZ(${radius}px)"
+           onclick="location.href='detail.html?id=${c.id}'">
+        ${thumb}
+        ${fallback}
+        <div class="drama-3d-card-overlay">
+          <div class="drama-3d-card-title">${esc(c.title)}</div>
+          ${rating}
         </div>
-        <span class="drama-circle-label">${esc(c.title)}</span>
-        ${rating}
       </div>`;
   }).join('');
-
-  // 아이템 수에 따라 애니메이션 속도 조정
-  const speed = Math.max(20, dramas.length * 3.5);
-  inner.style.animationDuration = `${speed}s`;
 }
 
 async function fetchContents() {
