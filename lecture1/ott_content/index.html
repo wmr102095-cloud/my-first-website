@@ -5,62 +5,81 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OTT Contents - 스트리밍 콘텐츠</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="js/splash.js" defer></script>
 </head>
 <body>
 
   <header class="header">
-    <a href="index.html" class="logo">OTT<span>Contents</span></a>
-    <div class="header-actions">
-      <a href="register.html" class="btn btn-primary">+ 콘텐츠 등록</a>
+    <a href="index.html" class="logo">
+      <img src="assets/logo.png" alt="BOOM!" class="logo-img">
+      <span class="logo-text">BOOM<em>!</em></span>
+    </a>
+    <nav class="header-nav">
+      <a href="#" class="nav-link active" data-filter="전체">홈</a>
+      <a href="#" class="nav-link" data-filter="영화">영화</a>
+      <a href="#" class="nav-link" data-filter="드라마">드라마</a>
+      <a href="#" class="nav-link" data-filter="애니메이션">애니메이션</a>
+      <a href="#" class="nav-link" data-filter="찜">나의 찜</a>
+    </nav>
+    <div class="header-actions" id="header-actions">
+      <a href="auth.html" class="btn btn-ghost">로그인</a>
+      <a href="auth.html" class="btn btn-primary">회원가입</a>
     </div>
   </header>
 
   <main class="main">
     <div class="hero">
-      <h1>지금 뜨는 <span>스트리밍</span> 콘텐츠</h1>
-      <p>영화, 드라마, 애니메이션까지 — 당신이 찾는 모든 콘텐츠</p>
+      <canvas id="hero-canvas"></canvas>
+      <div class="hero-shockwaves">
+        <div class="sw-ring r1"></div>
+        <div class="sw-ring r2"></div>
+        <div class="sw-ring r3"></div>
+      </div>
+      <div class="hero-inner">
+        <span class="boom-text">BOOM<em class="boom-bang">!</em></span>
+        <p class="boom-tagline">터지는 콘텐츠</p>
+      </div>
     </div>
 
-    <!-- 인기 드라마 원형 캐러셀 -->
-    <div class="drama-section">
-      <div class="section-title">지금 인기 드라마</div>
-      <div class="drama-carousel-3d-wrap">
-        <div class="drama-scene" id="drama-scene">
-          <!-- JS로 생성 -->
+    <!-- 드라마 그룹 -->
+    <div id="group-drama" class="category-group">
+      <div class="drama-section">
+        <div class="section-title"><span>지금 TOP10 드라마</span></div>
+        <div class="drama-carousel-3d-wrap">
+          <div class="drama-scene" id="scene-drama"></div>
         </div>
       </div>
-    </div>
-
-    <div class="filter-bar">
-      <div class="filter-row">
-        <span class="filter-label">유형</span>
-        <button class="filter-btn active" data-type="전체">전체</button>
-        <button class="filter-btn" data-type="영화">영화</button>
-        <button class="filter-btn" data-type="드라마">드라마</button>
-        <button class="filter-btn" data-type="애니메이션">애니메이션</button>
-        <button class="filter-btn" data-type="다큐멘터리">다큐멘터리</button>
-      </div>
-      <div class="filter-row">
-        <span class="filter-label">장르</span>
-        <button class="filter-btn active" data-genre="전체">전체</button>
-        <button class="filter-btn" data-genre="액션">액션</button>
-        <button class="filter-btn" data-genre="스릴러">스릴러</button>
-        <button class="filter-btn" data-genre="로맨스">로맨스</button>
-        <button class="filter-btn" data-genre="드라마">드라마</button>
-        <button class="filter-btn" data-genre="코미디">코미디</button>
-        <button class="filter-btn" data-genre="SF">SF</button>
-        <button class="filter-btn" data-genre="애니메이션">애니메이션</button>
+      <div class="drama-section" id="rec-drama" style="display:none">
+        <div class="section-title"><span>이런 드라마는 어떠세요?</span></div>
+        <div class="row-wrap" id="row-drama"></div>
       </div>
     </div>
 
-    <div class="section-title">
-      콘텐츠 목록 <span class="count-badge" id="count-badge"></span>
+    <!-- 영화 그룹 -->
+    <div id="group-movie" class="category-group">
+      <div class="drama-section">
+        <div class="section-title"><span>지금 TOP10 영화</span></div>
+        <div class="drama-carousel-3d-wrap">
+          <div class="drama-scene" id="scene-movie"></div>
+        </div>
+      </div>
+      <div class="drama-section" id="rec-movie" style="display:none">
+        <div class="section-title"><span>이런 영화는 어떠세요?</span></div>
+        <div class="row-wrap" id="row-movie"></div>
+      </div>
     </div>
 
-    <div class="content-grid" id="content-grid">
-      <div class="loading">
-        <div class="spinner"></div>
-        <p>콘텐츠 불러오는 중...</p>
+    <!-- 애니메이션 그룹 -->
+    <div id="group-anime" class="category-group">
+      <div class="drama-section">
+        <div class="section-title"><span>지금 TOP10 애니메이션</span></div>
+        <div class="drama-carousel-3d-wrap">
+          <div class="drama-scene" id="scene-anime"></div>
+        </div>
+      </div>
+      <div class="drama-section" id="rec-anime" style="display:none">
+        <div class="section-title"><span>이런 애니는 어떠세요?</span></div>
+        <div class="row-wrap" id="row-anime"></div>
       </div>
     </div>
   </main>
@@ -111,5 +130,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/list.js"></script>
+  <script src="js/cursor.js"></script>
+  <script src="js/hero.js"></script>
 </body>
 </html>

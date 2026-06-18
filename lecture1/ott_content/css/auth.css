@@ -1,0 +1,239 @@
+/* ── Auth Page Base ── */
+body.auth-page {
+  min-height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: stretch;
+  margin: 0;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.auth-wrap {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ── 왼쪽 브랜드 패널 ── */
+.auth-brand-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: radial-gradient(ellipse at 40% 50%, #2d0000 0%, #0d0000 50%, #000 100%);
+  padding: 60px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-brand-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(229,9,20,0.08) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, rgba(229,9,20,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.auth-brand-logo {
+  width: 180px;
+  height: auto;
+  filter: drop-shadow(0 0 40px rgba(229,9,20,0.6)) drop-shadow(0 0 80px rgba(229,9,20,0.3));
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%,100% { filter: drop-shadow(0 0 40px rgba(229,9,20,0.6)) drop-shadow(0 0 80px rgba(229,9,20,0.3)); }
+  50%      { filter: drop-shadow(0 0 60px rgba(229,9,20,0.9)) drop-shadow(0 0 120px rgba(229,9,20,0.5)); }
+}
+
+.auth-brand-name {
+  font-family: 'Bebas Neue', 'Black Han Sans', sans-serif;
+  font-size: 5rem;
+  color: #fff;
+  letter-spacing: 8px;
+  margin: 0;
+  text-shadow: 0 0 30px rgba(229,9,20,0.5);
+}
+
+.auth-brand-tagline {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+/* ── 오른쪽 폼 패널 ── */
+.auth-form-panel {
+  width: 420px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0a;
+  padding: 40px 24px;
+  border-left: 1px solid rgba(255,255,255,0.06);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ── 모바일 로고 (작은 화면에서만 표시) ── */
+.auth-mobile-logo {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.auth-mobile-logo img {
+  width: 70px;
+  filter: drop-shadow(0 0 20px rgba(229,9,20,0.7));
+}
+.auth-mobile-logo span {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem;
+  color: #fff;
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px rgba(229,9,20,0.5);
+}
+
+/* ── 탭 ── */
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 28px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+.auth-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 2px;
+  background: var(--primary, #E50914);
+  border-radius: 1px;
+  transition: width 0.25s;
+}
+.auth-tab.active { color: #fff; font-weight: 700; }
+.auth-tab.active::after { width: 40px; }
+
+/* ── 폼 ── */
+.auth-form { display: none; flex-direction: column; gap: 14px; }
+.auth-form.active { display: flex; }
+
+.auth-field {
+  position: relative;
+}
+
+.auth-field input {
+  width: 100%;
+  padding: 14px 16px;
+  background: #161616;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.auth-field input::placeholder { color: rgba(255,255,255,0.28); }
+
+.auth-field input:focus {
+  border-color: var(--primary, #E50914);
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.12);
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+  padding: 4px;
+}
+.pw-toggle:hover { opacity: 0.8; }
+
+/* ── 메시지 ── */
+.auth-error {
+  font-size: 0.82rem;
+  color: #ff4444;
+  min-height: 18px;
+  margin: -4px 2px;
+}
+.auth-ok {
+  font-size: 0.82rem;
+  color: #4caf50;
+  min-height: 18px;
+  margin: -4px 2px;
+}
+
+/* ── 제출 버튼 ── */
+.auth-submit {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary, #E50914);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.2s, transform 0.1s, opacity 0.2s;
+  letter-spacing: 0.5px;
+}
+.auth-submit:hover  { background: #c5050f; }
+.auth-submit:active { transform: scale(0.98); }
+.auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── 하단 링크 ── */
+.auth-footer-link {
+  text-align: center;
+  margin-top: 24px;
+}
+.auth-footer-link a {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.auth-footer-link a:hover { color: rgba(255,255,255,0.7); }
+
+/* ── 반응형: 860px 이하 ── */
+@media (max-width: 860px) {
+  .auth-brand-panel { display: none; }
+  .auth-form-panel {
+    width: 100%;
+    background: #000;
+    border-left: none;
+  }
+  .auth-mobile-logo { display: flex; }
+}

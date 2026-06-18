@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOOM! - 로그인 / 회원가입</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-wrap">
+
+    <!-- 왼쪽: 브랜드 패널 -->
+    <div class="auth-brand-panel">
+      <img src="assets/logo.png" alt="BOOM!" class="auth-brand-logo">
+      <h1 class="auth-brand-name">BOOM!</h1>
+      <p class="auth-brand-tagline">터지는 콘텐츠, 지금 바로 시작하세요</p>
+    </div>
+
+    <!-- 오른쪽: 폼 패널 -->
+    <div class="auth-form-panel">
+      <div class="auth-card">
+
+        <!-- 모바일 로고 -->
+        <div class="auth-mobile-logo">
+          <img src="assets/logo.png" alt="BOOM!">
+          <span>BOOM!</span>
+        </div>
+
+        <!-- 탭 -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">로그인</button>
+          <button class="auth-tab" data-tab="signup">회원가입</button>
+        </div>
+
+        <!-- 로그인 폼 -->
+        <form id="login-form" class="auth-form active">
+          <div class="auth-field">
+            <input type="text" id="login-id" placeholder="아이디 또는 이메일" autocomplete="username" required>
+          </div>
+          <div class="auth-field">
+            <input type="password" id="login-pw" placeholder="비밀번호" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" aria-label="비밀번호 보기">👁</button>
+          </div>
+          <p id="login-error" class="auth-error"></p>
+          <button type="submit" class="auth-submit">로그인</button>
+        </form>
+
+        <!-- 회원가입 폼 -->
+        <form id="signup-form" class="auth-form">
+          <div class="auth-field">
+            <input type="text" id="su-username" placeholder="아이디 (영문·숫자·_)" autocomplete="username" required>
+          </div>
+          <div class="auth-field">
+            <input type="email" id="su-email" placeholder="이메일 (선택 — 비밀번호 찾기용)" autocomplete="email">
+          </div>
+          <div class="auth-field">
+            <input type="password" id="su-pw" placeholder="비밀번호 (6자 이상)" autocomplete="new-password" required>
+            <button type="button" class="pw-toggle" aria-label="비밀번호 보기">👁</button>
+          </div>
+          <div class="auth-field">
+            <input type="password" id="su-pw2" placeholder="비밀번호 확인" autocomplete="new-password" required>
+          </div>
+          <p id="signup-error" class="auth-error"></p>
+          <p id="signup-ok" class="auth-ok"></p>
+          <button type="submit" class="auth-submit">회원가입</button>
+        </form>
+
+        <p class="auth-footer-link">
+          <a href="index.html">← 메인으로 돌아가기</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

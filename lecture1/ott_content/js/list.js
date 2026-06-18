@@ -1,6 +1,6 @@
 let allContents = [];
-let activeType = '전체';
-let activeGenre = '전체';
+let activeType  = '전체';
+const carouselCtrls = {}; // sceneId → AbortController
 
 const GRADIENTS = [
   'linear-gradient(135deg,#E50914,#8b0000)',
@@ -15,37 +15,73 @@ const GRADIENTS = [
   'linear-gradient(135deg,#e65100,#bf360c)',
 ];
 
-async function fetchDramas() {
+const CATEGORIES = [
+  { type: '드라마',     group: 'group-drama', sceneId: 'scene-drama', rowId: 'row-drama', recId: 'rec-drama',
+    top10: '지금 TOP10 드라마',    rec: '이런 드라마는 어떠세요?' },
+  { type: '영화',       group: 'group-movie', sceneId: 'scene-movie', rowId: 'row-movie', recId: 'rec-movie',
+    top10: '지금 TOP10 영화',      rec: '이런 영화는 어떠세요?' },
+  { type: '애니메이션', group: 'group-anime', sceneId: 'scene-anime', rowId: 'row-anime', recId: 'rec-anime',
+    top10: '지금 TOP10 애니메이션', rec: '이런 애니는 어떠세요?' },
+];
+
+/* ── 전체 데이터 로딩 ── */
+async function fetchAllContent() {
   const { data } = await db
     .from('ott_contents')
     .select('*')
-    .eq('content_type', '드라마')
     .order('rating', { ascending: false });
 
-  renderDramaCarousel(data || []);
+  allContents = data || [];
+
+  CATEGORIES.forEach(cat => {
+    const items = allContents.filter(c => c.content_type === cat.type);
+
+    renderDramaCarousel(items, cat.sceneId);
+
+    const recSection = document.getElementById(cat.recId);
+    const recommend  = [...items]
+      .sort((a, b) => (b.release_year || 0) - (a.release_year || 0))
+      .slice(0, 10);
+
+    if (recommend.length && recSection) {
+      recSection.style.display = '';
+      renderContentRow(recommend, cat.rowId, { perPage: 5 });
+    }
+  });
 }
 
-function renderDramaCarousel(dramas) {
-  const scene   = document.getElementById('drama-scene');
-  const wrap    = document.querySelector('.drama-carousel-3d-wrap');
+/* ── 3D 캐러셀 렌더러 ── */
+function renderDramaCarousel(dramas, sceneId) {
+  const scene = document.getElementById(sceneId);
+  if (!scene) return;
+  const wrap    = scene.closest('.drama-carousel-3d-wrap');
   const section = scene.closest('.drama-section');
+
+  if (carouselCtrls[sceneId]) carouselCtrls[sceneId].abort();
+  const ctrl = new AbortController();
+  carouselCtrls[sceneId] = ctrl;
+  const { signal } = ctrl;
+
+  wrap.querySelectorAll('.drama-nav').forEach(el => el.remove());
+  section.querySelectorAll('.drama-dots').forEach(el => el.remove());
+
   if (!dramas.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
 
   const n         = dramas.length;
   const TAU       = 2 * Math.PI;
   const angleStep = TAU / n;
-  const radius    = Math.max(260, Math.round((n * 185) / TAU));
+  const radius    = Math.max(360, Math.round((n * 260) / TAU));
 
-  /* ── 카드 생성 ── */
   scene.innerHTML = dramas.map((c, i) => {
-    const rank    = i + 1;
-    const grad    = GRADIENTS[i % GRADIENTS.length];
-    const thumb   = c.thumbnail_url
+    const rank     = i + 1;
+    const grad     = GRADIENTS[i % GRADIENTS.length];
+    const thumb    = c.thumbnail_url
       ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
     const fallback = `<div class="drama-3d-card-fallback"
-        style="background:${grad};${c.thumbnail_url ? 'display:none':''}">
+        style="background:${grad};${c.thumbnail_url ? 'display:none' : ''}">
         ${esc(c.title.charAt(0))}</div>`;
     const genreYear = [c.genre, c.release_year].filter(Boolean).join(' · ');
     const ratingVal = c.rating > 0 ? Number(c.rating).toFixed(1) : '';
@@ -68,12 +104,10 @@ function renderDramaCarousel(dramas) {
       </div>`;
   }).join('');
 
-  /* ── 좌우 화살표 ── */
   const leftBtn  = Object.assign(document.createElement('button'), { className: 'drama-nav drama-nav-left',  innerHTML: '&#8249;', type: 'button' });
   const rightBtn = Object.assign(document.createElement('button'), { className: 'drama-nav drama-nav-right', innerHTML: '&#8250;', type: 'button' });
   wrap.append(leftBtn, rightBtn);
 
-  /* ── 도트 인디케이터 ── */
   const dotsWrap = document.createElement('div');
   dotsWrap.className = 'drama-dots';
   dotsWrap.innerHTML = dramas.map((_, i) =>
@@ -81,11 +115,10 @@ function renderDramaCarousel(dramas) {
   ).join('');
   section.appendChild(dotsWrap);
 
-  /* ── 상태 ── */
-  const cards      = Array.from(scene.querySelectorAll('.drama-3d-card'));
-  const dots       = Array.from(dotsWrap.querySelectorAll('.drama-dot'));
+  const cards = Array.from(scene.querySelectorAll('.drama-3d-card'));
+  const dots  = Array.from(dotsWrap.querySelectorAll('.drama-dot'));
   let targetIdx    = 0;
-  let currentAngle = 0;  // 언바운드(무한 누적) — 정규화 없이 연속값 유지
+  let currentAngle = 0;
   let targetAngle  = 0;
   let hoveredIdx   = -1;
   let isDragging   = false;
@@ -93,224 +126,96 @@ function renderDramaCarousel(dramas) {
   let dragAngleStart = 0;
   let autoTimer;
 
-  /* ── 카드 이동 (업계 표준: 언바운드 각도 + 최단 경로) ── */
   function goTo(idx, withTimer = true) {
     targetIdx = ((idx % n) + n) % n;
-
-    // 카드 i의 정확한 각도값
     const exactAngle = -targetIdx * angleStep;
-
-    // currentAngle 기준으로 가장 가까운 동치 각도 계산
-    // → 오른쪽/왼쪽 방향을 항상 최단 경로로 선택
     const offset = Math.round((currentAngle - exactAngle) / TAU);
     targetAngle  = exactAngle + offset * TAU;
-
     dots.forEach((d, i) => d.classList.toggle('active', i === targetIdx));
-
     if (withTimer) {
       clearInterval(autoTimer);
       autoTimer = setInterval(() => goTo(targetIdx + 1), 15000);
     }
   }
 
-  /* ── 버튼 / 도트 이벤트 ── */
   leftBtn.addEventListener('click',  (e) => { e.stopPropagation(); goTo(targetIdx - 1); });
   rightBtn.addEventListener('click', (e) => { e.stopPropagation(); goTo(targetIdx + 1); });
   dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.dot)));
 
-  /* ── 팝업 열기 ── */
-  function openPopup(drama, rank) {
-    const overlay  = document.getElementById('drama-popup-overlay');
-    const img      = document.getElementById('popup-poster-img');
-    const fb       = document.getElementById('popup-poster-fb');
-    const grad     = GRADIENTS[(rank - 1) % GRADIENTS.length];
-
-    // 포스터 이미지
-    if (drama.thumbnail_url) {
-      img.src = esc(drama.thumbnail_url);
-      img.style.display = 'block';
-      fb.style.display  = 'none';
-      img.onerror = () => {
-        img.style.display = 'none';
-        fb.style.display  = 'flex';
-        fb.style.background = grad;
-        fb.textContent = drama.title.charAt(0);
-      };
-    } else {
-      img.style.display = 'none';
-      fb.style.display  = 'flex';
-      fb.style.background = grad;
-      fb.textContent = drama.title.charAt(0);
-    }
-
-    // 순위 배지
-    document.getElementById('popup-rank-badge').textContent = `${rank}위`;
-
-    // 태그
-    document.getElementById('popup-type').textContent   = drama.content_type || '드라마';
-    document.getElementById('popup-genre').textContent  = drama.genre  || '';
-    document.getElementById('popup-year').textContent   = drama.release_year || '';
-    const rStr = drama.rating > 0 ? `⭐ ${Number(drama.rating).toFixed(1)}` : '';
-    document.getElementById('popup-rating').textContent = rStr;
-
-    // 제목 / 줄거리 / 감독 / 출연
-    document.getElementById('popup-title').textContent    = drama.title;
-    document.getElementById('popup-desc').textContent     = drama.description    || '줄거리 정보가 없습니다.';
-    document.getElementById('popup-director').textContent = drama.director       || '정보 없음';
-    document.getElementById('popup-cast').textContent     = drama.cast_members   || '정보 없음';
-
-    // 시청하기 버튼
-    const watchBtn = document.getElementById('popup-watch-btn');
-    watchBtn.href = drama.watch_url || '#';
-    if (!drama.watch_url) watchBtn.target = '_self';
-
-    // 표시
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  /* ── 팝업 닫기 ── */
-  function closePopup() {
-    document.getElementById('drama-popup-overlay').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  document.getElementById('popup-close-btn').addEventListener('click', closePopup);
-  document.getElementById('drama-popup-overlay').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closePopup();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
-
-  /* ── 카드 클릭 / 호버 ── */
   cards.forEach((card, i) => {
-    card.addEventListener('click', () => {
-      if (!isDragging) openPopup(dramas[i], i + 1);
-    });
+    card.addEventListener('click', () => { if (!isDragging) location.href = `detail.html?id=${dramas[i].id}`; });
     card.addEventListener('mouseenter', () => { hoveredIdx = i; card.classList.add('is-hovered'); });
     card.addEventListener('mouseleave', () => { hoveredIdx = -1; card.classList.remove('is-hovered'); });
   });
 
-  /* ── 드래그 (좌우 넘기기) — window 레벨로 pointermove 처리 ── */
   let pointerDown = false;
-
   scene.addEventListener('pointerdown', (e) => {
-    pointerDown    = true;
-    isDragging     = false;
-    dragStartX     = e.clientX;
-    dragAngleStart = currentAngle;
-    scene.classList.add('dragging');
-    clearInterval(autoTimer);
+    pointerDown = true; isDragging = false;
+    dragStartX = e.clientX; dragAngleStart = currentAngle;
+    scene.classList.add('dragging'); clearInterval(autoTimer);
     e.preventDefault();
   });
-
   window.addEventListener('pointermove', (e) => {
     if (!pointerDown) return;
     const dx = e.clientX - dragStartX;
     if (Math.abs(dx) > 8) isDragging = true;
-    if (isDragging) {
-      currentAngle = targetAngle = dragAngleStart + dx / (radius * 0.7);
-    }
-  });
-
+    if (isDragging) currentAngle = targetAngle = dragAngleStart + dx / (radius * 0.7);
+  }, { signal });
   window.addEventListener('pointerup', () => {
     if (!pointerDown) return;
-    pointerDown = false;
-    scene.classList.remove('dragging');
-    if (isDragging) {
-      const snapIdx = ((Math.round(-currentAngle / angleStep) % n) + n) % n;
-      goTo(snapIdx);
-    }
+    pointerDown = false; scene.classList.remove('dragging');
+    if (isDragging) goTo(((Math.round(-currentAngle / angleStep) % n) + n) % n);
     setTimeout(() => { isDragging = false; }, 0);
-  });
+  }, { signal });
 
-  /* ── rAF 애니메이션 루프 ── */
   function tick() {
+    if (signal.aborted) return;
     const delta = targetAngle - currentAngle;
-
-    if (Math.abs(delta) < 0.002) {
-      currentAngle = targetAngle; // 정확한 스냅
-    } else {
-      currentAngle += delta * 0.14;
-    }
+    currentAngle += Math.abs(delta) < 0.002 ? (targetAngle - currentAngle) : delta * 0.14;
 
     cards.forEach((card, i) => {
-      const a    = currentAngle + i * angleStep;
-      const sinA = Math.sin(a);
-      const cosA = Math.cos(a);
-
+      const a = currentAngle + i * angleStep;
+      const sinA = Math.sin(a), cosA = Math.cos(a);
       const x   = sinA * radius;
       let   scl = 0.5  + 0.5  * ((cosA + 1) / 2);
       const opa = 0.22 + 0.78 * ((cosA + 1) / 2);
       const zi  = Math.round((cosA + 1) * 50);
-
       if (i === hoveredIdx) scl = Math.min(scl + 0.2, 1.2);
-
       card.style.transform = `translateX(${x.toFixed(1)}px) scale(${scl.toFixed(3)})`;
       card.style.opacity   = opa.toFixed(3);
       card.style.zIndex    = zi;
     });
-
     requestAnimationFrame(tick);
   }
-
   tick();
   goTo(0);
 }
 
-async function fetchContents() {
-  const grid = document.getElementById('content-grid');
-  grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>콘텐츠 불러오는 중...</p></div>';
+/* ── 가로 스크롤 카드 행 렌더러 ── */
+function renderContentRow(items, wrapId, { perPage = 5 } = {}) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
 
-  const { data, error } = await db
-    .from('ott_contents')
-    .select('*')
-    .order('created_at', { ascending: false });
+  if (!items.length) return;
 
-  if (error) {
-    grid.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>데이터를 불러오는 데 실패했습니다.</p></div>';
-    return;
-  }
+  const viewport = document.createElement('div');
+  viewport.className = 'row-viewport';
 
-  allContents = data || [];
-  renderContents();
-}
+  const track = document.createElement('div');
+  track.className = 'row-track';
 
-function renderContents() {
-  const grid = document.getElementById('content-grid');
-  const badge = document.getElementById('count-badge');
+  items.forEach(c => {
+    const stars = c.rating > 0 ? `<span class="card-rating">⭐ ${Number(c.rating).toFixed(1)}</span>` : '';
+    const thumb = c.thumbnail_url
+      ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}" loading="lazy"
+             onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-fallback\\'><div class=\\'icon\\'>🎬</div></div>'">`
+      : `<div class="card-thumb-fallback"><div class="icon">🎬</div></div>`;
 
-  let filtered = allContents;
-
-  if (activeType !== '전체') {
-    filtered = filtered.filter(c => c.content_type === activeType);
-  }
-
-  if (activeGenre !== '전체') {
-    filtered = filtered.filter(c => c.genre === activeGenre);
-  }
-
-  badge.textContent = `(${filtered.length}개)`;
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state">
-        <div class="icon">🎬</div>
-        <p>등록된 콘텐츠가 없습니다.</p>
-        <a href="register.html" class="btn btn-primary">첫 번째 콘텐츠 등록하기</a>
-      </div>`;
-    return;
-  }
-
-  grid.innerHTML = filtered.map(c => createCardHTML(c)).join('');
-}
-
-function createCardHTML(c) {
-  const stars = c.rating > 0 ? `<span class="card-rating">⭐ ${Number(c.rating).toFixed(1)}</span>` : '';
-  const thumb = c.thumbnail_url
-    ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-fallback\\'><div class=\\'icon\\'>🎬</div><span>${esc(c.content_type)}</span></div>'">`
-    : `<div class="card-thumb-fallback"><div class="icon">🎬</div><span>${esc(c.content_type)}</span></div>`;
-
-  return `
-    <div class="content-card" onclick="location.href='detail.html?id=${c.id}'">
+    const card = document.createElement('div');
+    card.className = 'content-card';
+    card.onclick   = () => location.href = `detail.html?id=${c.id}`;
+    card.innerHTML = `
       <div class="card-thumb">
         ${thumb}
         <span class="type-badge">${esc(c.content_type)}</span>
@@ -321,8 +226,76 @@ function createCardHTML(c) {
           <span>${esc(c.genre)}${c.release_year ? ' · ' + c.release_year : ''}</span>
           ${stars}
         </div>
-      </div>
-    </div>`;
+      </div>`;
+    track.appendChild(card);
+  });
+
+  viewport.appendChild(track);
+  wrap.appendChild(viewport);
+
+  const totalPages = Math.ceil(items.length / perPage);
+  if (totalPages <= 1) return;
+
+  let page = 0;
+
+  const prevBtn = document.createElement('button');
+  const nextBtn = document.createElement('button');
+  prevBtn.type = nextBtn.type = 'button';
+  prevBtn.className = 'row-nav-btn left hidden';
+  nextBtn.className = 'row-nav-btn right';
+  prevBtn.innerHTML = '&#8249;';
+  nextBtn.innerHTML = '&#8250;';
+
+  const dotsWrap = document.createElement('div');
+  dotsWrap.className = 'row-dots';
+  dotsWrap.innerHTML = Array.from({ length: totalPages }, (_, i) =>
+    `<button class="row-dot${i === 0 ? ' active' : ''}" data-p="${i}" type="button"></button>`
+  ).join('');
+
+  function goTo(p) {
+    page = Math.max(0, Math.min(p, totalPages - 1));
+    const gap   = 14;
+    const cardW = (viewport.clientWidth - (perPage - 1) * gap) / perPage;
+    track.style.transform = `translateX(-${page * perPage * (cardW + gap)}px)`;
+    prevBtn.classList.toggle('hidden', page === 0);
+    nextBtn.classList.toggle('hidden', page === totalPages - 1);
+    dotsWrap.querySelectorAll('.row-dot').forEach((d, i) => d.classList.toggle('active', i === page));
+  }
+
+  prevBtn.addEventListener('click', () => goTo(page - 1));
+  nextBtn.addEventListener('click', () => goTo(page + 1));
+  dotsWrap.querySelectorAll('.row-dot').forEach(d =>
+    d.addEventListener('click', () => goTo(+d.dataset.p))
+  );
+
+  wrap.append(prevBtn, nextBtn, dotsWrap);
+}
+
+/* ── 네비 탭 전환 ── */
+function refreshGroups(type) {
+  const typeToGroup = { '드라마': 'group-drama', '영화': 'group-movie', '애니메이션': 'group-anime' };
+
+  CATEGORIES.forEach(cat => {
+    const el = document.getElementById(cat.group);
+    if (!el) return;
+    const show = type === '전체' || type === cat.type;
+    el.style.display = type === '찜' ? 'none' : (show ? '' : 'none');
+  });
+
+  /* 찜 탭 안내 */
+  let wishEl = document.getElementById('wishlist-empty');
+  if (type === '찜') {
+    if (!wishEl) {
+      wishEl = document.createElement('div');
+      wishEl.id = 'wishlist-empty';
+      wishEl.className = 'empty-state';
+      wishEl.innerHTML = '<div class="icon">🔖</div><p>찜한 콘텐츠가 없습니다.</p><p style="font-size:0.82rem;margin-top:6px;color:#666;">로그인 후 콘텐츠를 찜해보세요!</p>';
+      document.querySelector('.main').appendChild(wishEl);
+    }
+    wishEl.style.display = '';
+  } else if (wishEl) {
+    wishEl.style.display = 'none';
+  }
 }
 
 function esc(str) {
@@ -334,24 +307,41 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-document.querySelectorAll('[data-type]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeType = btn.dataset.type;
-    renderContents();
+/* ── 네비게이션 이벤트 ── */
+document.querySelectorAll('.nav-link[data-filter]').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const filter = link.dataset.filter;
+    document.querySelectorAll('.nav-link[data-filter]').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    activeType = filter;
+    refreshGroups(filter);
   });
 });
 
-document.querySelectorAll('[data-genre]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-genre]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeGenre = btn.dataset.genre;
-    renderContents();
-  });
-});
+fetchAllContent();
 
-// 두 데이터 병렬 로딩
-fetchDramas();
-fetchContents();
+/* ── 로그인 상태에 따라 헤더 업데이트 ── */
+(async function updateHeader() {
+  const { data: { session } } = await db.auth.getSession();
+  const actions = document.getElementById('header-actions');
+  if (!actions) return;
+
+  if (session) {
+    const { data: profile } = await db
+      .from('profiles')
+      .select('username')
+      .eq('user_id', session.user.id)
+      .single();
+
+    const username = profile?.username || session.user.email;
+    actions.innerHTML = `
+      <span class="header-username">👤 ${esc(username)}</span>
+      <button class="btn btn-ghost" id="logout-btn">로그아웃</button>`;
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await db.auth.signOut();
+      location.reload();
+    });
+  }
+})();
