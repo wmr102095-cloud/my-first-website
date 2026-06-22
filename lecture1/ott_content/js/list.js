@@ -308,6 +308,7 @@ function renderAllSection(items, groupId, typeName) {
   });
 
   section.append(titleDiv, grid);
+  section.style.display = 'none'; // 기본 숨김 — 카테고리 탭 클릭 시 표시
   group.appendChild(section);
 }
 
@@ -400,6 +401,10 @@ function refreshGroups(type) {
     if (!el) return;
     const show = type === '전체' || type === cat.type;
     el.style.display = type === '찜' ? 'none' : (show ? '' : 'none');
+
+    // 전체 탭에서는 전체작품 섹션 숨김, 카테고리 탭에서만 표시
+    const allSec = el.querySelector('.all-section');
+    if (allSec) allSec.style.display = (type === cat.type) ? '' : 'none';
   });
 
   /* 찜 탭 */
