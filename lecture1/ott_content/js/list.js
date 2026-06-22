@@ -1,6 +1,76 @@
 let allContents = [];
 let activeType  = '전체';
-const carouselCtrls = {}; // sceneId → AbortController
+const carouselCtrls = {};
+
+/* ══════════════════════════════════
+   팝업 & 찜하기
+══════════════════════════════════ */
+const _popupOverlay = document.getElementById('drama-popup-overlay');
+const _popupClose   = document.getElementById('popup-close-btn');
+const _wishBtn      = document.getElementById('popup-wish-btn');
+
+/* 찜 목록 (localStorage) */
+function _getWish()       { try { return JSON.parse(localStorage.getItem('boom_wish') || '[]'); } catch { return []; } }
+function _saveWish(list)  { localStorage.setItem('boom_wish', JSON.stringify(list)); }
+function _isWished(id)    { return _getWish().includes(String(id)); }
+function _toggleWish(id) {
+  const list = _getWish(), sid = String(id), idx = list.indexOf(sid);
+  idx === -1 ? list.push(sid) : list.splice(idx, 1);
+  _saveWish(list);
+  return idx === -1;
+}
+function _refreshWishBtn(id) {
+  const on = _isWished(id);
+  _wishBtn.textContent = on ? '♥ 찜 완료' : '♡ 찜하기';
+  _wishBtn.classList.toggle('wished', on);
+}
+
+/* 팝업 열기 */
+function openPopup(c, rank) {
+  const img  = document.getElementById('popup-poster-img');
+  const fb   = document.getElementById('popup-poster-fb');
+
+  if (c.thumbnail_url) {
+    img.src = c.thumbnail_url; img.alt = c.title;
+    img.style.display = 'block'; fb.style.display = 'none';
+    img.onerror = () => { img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = c.title.charAt(0); };
+  } else {
+    img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = c.title.charAt(0);
+  }
+
+  const badge = document.getElementById('popup-rank-badge');
+  badge.textContent = rank ? `${rank}위` : '';
+  badge.style.display = rank ? '' : 'none';
+
+  document.getElementById('popup-type').textContent   = c.content_type || '';
+  document.getElementById('popup-genre').textContent  = c.genre || '';
+  document.getElementById('popup-year').textContent   = c.release_year || '';
+  document.getElementById('popup-rating').textContent = c.rating > 0 ? `⭐ ${Number(c.rating).toFixed(1)}` : '';
+  document.getElementById('popup-title').textContent   = c.title || '';
+  document.getElementById('popup-desc').textContent    = c.description || '';
+  document.getElementById('popup-director').textContent = c.director || '–';
+  document.getElementById('popup-cast').textContent    = c.actors || '–';
+
+  document.getElementById('popup-watch-btn').href = `detail.html?id=${c.id}`;
+  _wishBtn.dataset.id = c.id;
+  _refreshWishBtn(c.id);
+
+  _popupOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePopup() {
+  _popupOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+_popupClose.addEventListener('click', closePopup);
+_popupOverlay.addEventListener('click', e => { if (e.target === _popupOverlay) closePopup(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
+_wishBtn.addEventListener('click', function () {
+  _toggleWish(this.dataset.id);
+  _refreshWishBtn(this.dataset.id);
+});
 
 const GRADIENTS = [
   'linear-gradient(135deg,#E50914,#8b0000)',
@@ -36,7 +106,8 @@ async function fetchAllContent() {
   CATEGORIES.forEach(cat => {
     const items = allContents.filter(c => c.content_type === cat.type);
 
-    renderDramaCarousel(items, cat.sceneId);
+    // TOP 10만 캐러셀에 표시 (rating 내림차순으로 이미 정렬됨)
+    renderDramaCarousel(items.slice(0, 10), cat.sceneId);
 
     const recSection = document.getElementById(cat.recId);
     const recommend  = [...items]
@@ -47,6 +118,9 @@ async function fetchAllContent() {
       recSection.style.display = '';
       renderContentRow(recommend, cat.rowId, { perPage: 5 });
     }
+
+    // 전체 작품 섹션
+    renderAllSection(items, cat.group, cat.type);
   });
 }
 
@@ -143,7 +217,7 @@ function renderDramaCarousel(dramas, sceneId) {
   dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.dot)));
 
   cards.forEach((card, i) => {
-    card.addEventListener('click', () => { if (!isDragging) location.href = `detail.html?id=${dramas[i].id}`; });
+    card.addEventListener('click', () => { if (!isDragging) openPopup(dramas[i], i + 1); });
     card.addEventListener('mouseenter', () => { hoveredIdx = i; card.classList.add('is-hovered'); });
     card.addEventListener('mouseleave', () => { hoveredIdx = -1; card.classList.remove('is-hovered'); });
   });
@@ -191,6 +265,52 @@ function renderDramaCarousel(dramas, sceneId) {
   goTo(0);
 }
 
+/* ── 전체 작품 그리드 섹션 ── */
+function renderAllSection(items, groupId, typeName) {
+  const group = document.getElementById(groupId);
+  if (!group || !items.length) return;
+
+  // 기존 전체 섹션 제거 후 재생성
+  group.querySelector('.all-section')?.remove();
+
+  const section = document.createElement('div');
+  section.className = 'drama-section all-section';
+
+  const titleDiv = document.createElement('div');
+  titleDiv.className = 'section-title';
+  titleDiv.innerHTML = `<span>${typeName} 전체</span><span class="count-badge">${items.length}작품</span>`;
+
+  const grid = document.createElement('div');
+  grid.className = 'content-grid';
+
+  items.forEach(c => {
+    const stars = c.rating > 0 ? `<span class="card-rating">⭐ ${Number(c.rating).toFixed(1)}</span>` : '';
+    const thumb = c.thumbnail_url
+      ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}" loading="lazy"
+             onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-fallback\\'><div class=\\'icon\\'>🎬</div></div>'">`
+      : `<div class="card-thumb-fallback"><div class="icon">🎬</div></div>`;
+    const card = document.createElement('div');
+    card.className = 'content-card';
+    card.onclick = () => openPopup(c, null);
+    card.innerHTML = `
+      <div class="card-thumb">
+        ${thumb}
+        <span class="type-badge">${esc(c.content_type)}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title" title="${esc(c.title)}">${esc(c.title)}</div>
+        <div class="card-meta">
+          <span>${esc(c.genre)}${c.release_year ? ' · ' + c.release_year : ''}</span>
+          ${stars}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  section.append(titleDiv, grid);
+  group.appendChild(section);
+}
+
 /* ── 가로 스크롤 카드 행 렌더러 ── */
 function renderContentRow(items, wrapId, { perPage = 5 } = {}) {
   const wrap = document.getElementById(wrapId);
@@ -214,7 +334,7 @@ function renderContentRow(items, wrapId, { perPage = 5 } = {}) {
 
     const card = document.createElement('div');
     card.className = 'content-card';
-    card.onclick   = () => location.href = `detail.html?id=${c.id}`;
+    card.onclick   = () => openPopup(c, null);
     card.innerHTML = `
       <div class="card-thumb">
         ${thumb}
@@ -282,19 +402,35 @@ function refreshGroups(type) {
     el.style.display = type === '찜' ? 'none' : (show ? '' : 'none');
   });
 
-  /* 찜 탭 안내 */
-  let wishEl = document.getElementById('wishlist-empty');
+  /* 찜 탭 */
+  let wishSection = document.getElementById('wishlist-section');
   if (type === '찜') {
-    if (!wishEl) {
-      wishEl = document.createElement('div');
-      wishEl.id = 'wishlist-empty';
-      wishEl.className = 'empty-state';
-      wishEl.innerHTML = '<div class="icon">🔖</div><p>찜한 콘텐츠가 없습니다.</p><p style="font-size:0.82rem;margin-top:6px;color:#666;">로그인 후 콘텐츠를 찜해보세요!</p>';
-      document.querySelector('.main').appendChild(wishEl);
+    if (!wishSection) {
+      wishSection = document.createElement('div');
+      wishSection.id = 'wishlist-section';
+      document.querySelector('.main').appendChild(wishSection);
     }
-    wishEl.style.display = '';
-  } else if (wishEl) {
-    wishEl.style.display = 'none';
+    const ids = _getWish();
+    const wished = allContents.filter(c => ids.includes(String(c.id)));
+    if (wished.length) {
+      wishSection.innerHTML = `<div class="section-title"><span>나의 찜 목록</span></div><div class="content-grid" id="wishlist-grid"></div>`;
+      wished.forEach(c => {
+        const stars = c.rating > 0 ? `<span class="card-rating">⭐ ${Number(c.rating).toFixed(1)}</span>` : '';
+        const thumb = c.thumbnail_url
+          ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-fallback\\'><div class=\\'icon\\'>🎬</div></div>'">`
+          : `<div class="card-thumb-fallback"><div class="icon">🎬</div></div>`;
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.onclick = () => openPopup(c, null);
+        card.innerHTML = `<div class="card-thumb">${thumb}<span class="type-badge">${esc(c.content_type)}</span></div><div class="card-body"><div class="card-title" title="${esc(c.title)}">${esc(c.title)}</div><div class="card-meta"><span>${esc(c.genre)}${c.release_year ? ' · ' + c.release_year : ''}</span>${stars}</div></div>`;
+        document.getElementById('wishlist-grid').appendChild(card);
+      });
+    } else {
+      wishSection.innerHTML = '<div class="empty-state"><div class="icon">🔖</div><p>찜한 콘텐츠가 없습니다.</p><p style="font-size:0.82rem;margin-top:6px;color:#666;">콘텐츠 팝업에서 ♡ 찜하기를 눌러보세요!</p></div>';
+    }
+    wishSection.style.display = '';
+  } else if (wishSection) {
+    wishSection.style.display = 'none';
   }
 }
 
@@ -321,6 +457,71 @@ document.querySelectorAll('.nav-link[data-filter]').forEach(link => {
 
 fetchAllContent();
 
+/* ══════════════════════════════════
+   검색
+══════════════════════════════════ */
+const _searchOverlay  = document.getElementById('search-overlay');
+const _searchInput    = document.getElementById('search-input');
+const _searchResults  = document.getElementById('search-results');
+const _searchBtn      = document.getElementById('search-btn');
+const _searchCloseBtn = document.getElementById('search-close-btn');
+
+function openSearch() {
+  _searchOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => _searchInput.focus(), 60);
+}
+function closeSearch() {
+  _searchOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+  _searchInput.value = '';
+  _searchResults.innerHTML = '<p class="search-hint">검색어를 입력하세요</p>';
+}
+
+function renderSearch(q) {
+  if (!q) { _searchResults.innerHTML = '<p class="search-hint">검색어를 입력하세요</p>'; return; }
+  const lq   = q.toLowerCase();
+  const hits = allContents.filter(c =>
+    c.title?.toLowerCase().includes(lq) ||
+    c.genre?.toLowerCase().includes(lq) ||
+    c.director?.toLowerCase().includes(lq) ||
+    c.actors?.toLowerCase().includes(lq)
+  );
+  if (!hits.length) { _searchResults.innerHTML = '<p class="search-hint">검색 결과가 없습니다</p>'; return; }
+
+  _searchResults.innerHTML = `<div class="search-count">${hits.length}개 결과</div><div class="search-grid" id="s-grid"></div>`;
+  const grid = document.getElementById('s-grid');
+  hits.forEach(c => {
+    const thumb = c.thumbnail_url
+      ? `<img src="${esc(c.thumbnail_url)}" alt="${esc(c.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'card-thumb-fallback\\'><div class=\\'icon\\'>🎬</div></div>'">`
+      : `<div class="card-thumb-fallback"><div class="icon">🎬</div></div>`;
+    const stars = c.rating > 0 ? `<span class="card-rating">⭐ ${Number(c.rating).toFixed(1)}</span>` : '';
+    const card = document.createElement('div');
+    card.className = 'content-card';
+    card.onclick = () => { closeSearch(); openPopup(c, null); };
+    card.innerHTML = `
+      <div class="card-thumb">${thumb}<span class="type-badge">${esc(c.content_type)}</span></div>
+      <div class="card-body">
+        <div class="card-title" title="${esc(c.title)}">${esc(c.title)}</div>
+        <div class="card-meta"><span>${esc(c.genre)}${c.release_year ? ' · ' + c.release_year : ''}</span>${stars}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+/* 이벤트 위임 — innerHTML 교체 후에도 동작 */
+document.addEventListener('click', e => { if (e.target.closest('#search-btn')) openSearch(); });
+_searchCloseBtn.addEventListener('click', closeSearch);
+_searchOverlay.addEventListener('click', e => { if (e.target === _searchOverlay) closeSearch(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && _searchOverlay.classList.contains('open')) closeSearch();
+});
+let _sDeb;
+_searchInput.addEventListener('input', () => {
+  clearTimeout(_sDeb);
+  _sDeb = setTimeout(() => renderSearch(_searchInput.value.trim()), 160);
+});
+
 /* ── 로그인 상태에 따라 헤더 업데이트 ── */
 (async function updateHeader() {
   const { data: { session } } = await db.auth.getSession();
@@ -335,7 +536,9 @@ fetchAllContent();
       .single();
 
     const username = profile?.username || session.user.email;
+    const SEARCH_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
     actions.innerHTML = `
+      <button id="search-btn" class="search-icon-btn" aria-label="검색" type="button">${SEARCH_SVG}</button>
       <span class="header-username">👤 ${esc(username)}</span>
       <button class="btn btn-ghost" id="logout-btn">로그아웃</button>`;
 
