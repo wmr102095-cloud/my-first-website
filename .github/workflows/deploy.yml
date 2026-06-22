@@ -51,15 +51,15 @@ jobs:
         run: npm run build
 
       # ── 산출물 합치기 ─────────────────────────────────────
-      # game_community → root, mini_sns → /mini_sns/, ott_content → /ott_content/
+      # ott_content → root(/), game_community → /game_community/, mini_sns → /mini_sns/
       - name: Combine build outputs
         run: |
           mkdir -p combined_dist
-          cp -r lecture1/game_community/dist/. combined_dist/
+          cp -r lecture1/ott_content/. combined_dist/
+          mkdir -p combined_dist/game_community
+          cp -r lecture1/game_community/dist/. combined_dist/game_community/
           mkdir -p combined_dist/mini_sns
           cp -r lecture1/mini_sns/dist/. combined_dist/mini_sns/
-          mkdir -p combined_dist/ott_content
-          cp -r lecture1/ott_content/. combined_dist/ott_content/
 
       # ── GitHub Pages 배포 ─────────────────────────────────
       - name: Setup Pages
